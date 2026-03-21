@@ -1,0 +1,40 @@
+{
+  "name": "taskteam-server",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "test:docker-up": "docker-compose -f docker-compose.test.yaml up -d",
+    "test:docker-down": "docker-compose -f docker-compose.test.yaml down",
+    "test:migrate": "dotenv -e .env.test -- npx drizzle-kit push",
+    "pretest": "npm run test:docker-up && sleep 3 && npm run test:migrate",
+    "test": "dotenv -e .env.test -- vitest run",
+    "posttest": "npm run test:docker-down",
+    "db:push": "npx drizzle-kit push",
+    "db:studio": "npx drizzle-kit studio"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "drizzle-orm": "^0.45.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.11.3",
+    "socket.io": "^4.7.2"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.13",
+    "@types/express": "^4.17.17",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^20.19.37",
+    "@types/pg": "^8.11.4",
+    "@types/supertest": "^7.2.0",
+    "dotenv-cli": "^11.0.0",
+    "drizzle-kit": "^0.31.10",
+    "supertest": "^7.2.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.x.x",
+    "vitest": "^4.1.0"
+  }
+}
