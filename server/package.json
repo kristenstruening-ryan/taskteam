@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "dist/index.js",
   "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
     "test:docker-up": "docker-compose -f docker-compose.test.yaml up -d",
     "test:docker-down": "docker-compose -f docker-compose.test.yaml down",
     "test:migrate": "dotenv -e .env.test -- npx drizzle-kit push",
@@ -10,7 +13,8 @@
     "test": "dotenv -e .env.test -- vitest run",
     "posttest": "npm run test:docker-down",
     "db:push": "npx drizzle-kit push",
-    "db:studio": "npx drizzle-kit studio"
+    "db:studio": "npx drizzle-kit studio",
+    "db:seed": "dotenv -e .env -- ts-node src/db/seed.ts"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
@@ -20,7 +24,8 @@
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.11.3",
-    "socket.io": "^4.7.2"
+    "socket.io": "^4.7.2",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

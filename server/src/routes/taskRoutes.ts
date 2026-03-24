@@ -10,6 +10,6 @@ const router = Router();
 
 router.get("/", authenticate, getTasks);
 router.post("/", authenticate, createTask);
-router.patch("/move", authenticate, updateTaskPosition);
+router.post("/move", authenticate, updateTaskPosition);
 
 export default router;

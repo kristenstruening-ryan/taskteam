@@ -1,12 +1,36 @@
+import * as dotenv from "dotenv";
+dotenv.config();
+
 import express from "express";
+import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import { verifyToken } from "./utils/authUtils";
 import taskRoutes from "./routes/taskRoutes";
 import authRoutes from "./routes/authRoutes";
 import { registerTaskHandlers } from "./sockets/taskHandler";
+import { sql } from "drizzle-orm";
+import { db } from "./db";
+import boardRoutes from "./routes/boardRoutes";
 
 export const app = express();
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: true,
+  }),
+);
+app.get("/health", async (req, res) => {
+  try {
+    await db.execute(sql`SELECT 1`);
+    res.status(200).json({ status: "ok", database: "connected" });
+  } catch (error) {
+    res.status(500).json({ status: "error", database: "disconnected" });
+  }
+});
+
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
@@ -17,8 +41,9 @@ const io = new Server(httpServer, {
 app.use(express.json());
 
 // REST Routes
-app.use("/api/tasks", taskRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/tasks", taskRoutes);
+app.use("/api/boards", boardRoutes);
 
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;

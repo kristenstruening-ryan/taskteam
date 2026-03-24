@@ -6,6 +6,7 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -24,19 +25,27 @@ export const boards = pgTable("boards", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const tasks = pgTable(
-  "tasks",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    content: text("content").notNull(),
-    order: integer("order").notNull(),
-    columnId: text("column_id").notNull(),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id),
-    createdAt: timestamp("created_at").defaultNow().notNull(),
-  },
-  (t) => ({
-    unq: unique().on(t.id, t.userId),
+export const tasks = pgTable("tasks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  content: text("content").notNull(),
+  columnId: text("column_id").notNull(),
+  boardId: uuid("board_id")
+    .notNull()
+    .references(() => boards.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  order: integer("order").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const boardsRelations = relations(boards, ({ many }) => ({
+  tasks: many(tasks),
+}));
+
+export const tasksRelations = relations(tasks, ({ one }) => ({
+  board: one(boards, {
+    fields: [tasks.boardId],
+    references: [boards.id],
   }),
-);
+}));

@@ -2,10 +2,11 @@ import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
 import { app } from "../index";
 import { db } from "../db";
-import { users } from "../db/schema";
+import { tasks, users } from "../db/schema";
 
 describe("Auth Controller Integration", () => {
   beforeAll(async () => {
+    await db.delete(tasks);
     await db.delete(users);
   });
 

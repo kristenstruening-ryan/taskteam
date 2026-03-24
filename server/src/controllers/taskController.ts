@@ -1,11 +1,9 @@
 import { Response } from "express";
 import { AuthRequest } from "../types";
 import { TaskService } from "../services/taskService";
+import { createTaskSchema } from "../middleware/validationMiddleware";
+import { ZodError } from "zod";
 
-/**
- * GET /api/tasks
- * Fetches all tasks for the authenticated user
- */
 export const getTasks = async (req: AuthRequest, res: Response) => {
   try {
     const userId = req.userId;
@@ -21,42 +19,34 @@ export const getTasks = async (req: AuthRequest, res: Response) => {
   }
 };
 
-/**
- * POST /api/tasks
- * Creates a new task for the authenticated user
- */
 export const createTask = async (req: AuthRequest, res: Response) => {
   try {
-    const { content, columnId } = req.body;
     const userId = req.userId;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    if (!userId) {
-      return res.status(401).json({ error: "Unauthorized" });
-    }
-
-    if (!content || !columnId) {
-      return res
-        .status(400)
-        .json({ error: "Content and columnId are required" });
-    }
+    const validatedData = createTaskSchema.parse(req.body);
 
     const newTask = await TaskService.createTask({
-      content,
-      columnId,
+      content: validatedData.content,
+      columnId: validatedData.columnId,
+      boardId: validatedData.boardId,
       userId,
     });
 
     res.status(201).json(newTask);
   } catch (error) {
-    console.error("Error in createTask controller:", error);
+    if (error instanceof ZodError) {
+      return res.status(400).json({
+        error: "Invalid input data",
+        details: error.issues,
+      });
+    }
+
+    console.error("DATABASE_ERROR in createTask:", error);
     res.status(500).json({ error: "Failed to create task" });
   }
 };
 
-/**
- * PATCH /api/tasks/move
- * Updates a task's column and its position (order)
- */
 export const updateTaskPosition = async (req: AuthRequest, res: Response) => {
   try {
     const { taskId, newColumnId, newOrder } = req.body;
@@ -82,7 +72,6 @@ export const updateTaskPosition = async (req: AuthRequest, res: Response) => {
     res.status(200).json(updatedTask);
   } catch (error) {
     console.error("Error in updateTaskPosition controller:", error);
-    // If TaskService throws "Task not found", we catch it here
     const errorMessage =
       error instanceof Error ? error.message : "Failed to update task position";
     res.status(500).json({ error: errorMessage });
