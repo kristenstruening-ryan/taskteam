@@ -14,9 +14,11 @@ export default function LoginPage() {
     try {
       const response = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", response.data.token);
-      router.push("/");
+      localStorage.setItem("user_email", response.data.user.email);
+      window.dispatchEvent(new Event("storage"));
+      router.push("/dashboard");
     } catch (error) {
-      alert("Login failed! Check your backend logs.");
+      alert("Login failed!");
       console.error(error);
     }
   };
@@ -30,14 +32,14 @@ export default function LoginPage() {
         <input
           type="email"
           placeholder="Email"
-          className="w-full p-2 mb-4 border rounded"
+          className="w-full p-2 mb-4 border rounded text-slate-900"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <input
           type="password"
           placeholder="Password"
-          className="w-full p-2 mb-4 border rounded"
+          className="w-full p-2 mb-4 border rounded text-slate-900"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />

@@ -8,10 +8,13 @@ import { Server } from "socket.io";
 import { verifyToken } from "./utils/authUtils";
 import taskRoutes from "./routes/taskRoutes";
 import authRoutes from "./routes/authRoutes";
+import boardRoutes from "./routes/boardRoutes";
+import commentRoutes from "./routes/commentRoutes";
+import notificationRoutes from "./routes/notificationRoutes";
+import userRoutes from "./routes/userRoutes";
 import { registerTaskHandlers } from "./sockets/taskHandler";
 import { sql } from "drizzle-orm";
 import { db } from "./db";
-import boardRoutes from "./routes/boardRoutes";
 
 export const app = express();
 app.use(
@@ -37,12 +40,13 @@ const io = new Server(httpServer, {
   cors: { origin: "*" },
 });
 
-// Express Middleware
 app.use(express.json());
 
-// REST Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/comments", commentRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/user", userRoutes);
 app.use("/api/boards", boardRoutes);
 
 io.use((socket, next) => {

@@ -4,6 +4,7 @@ import {
   text,
   integer,
   timestamp,
+  boolean,
   unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
@@ -28,15 +29,30 @@ export const boards = pgTable("boards", {
 export const tasks = pgTable("tasks", {
   id: uuid("id").primaryKey().defaultRandom(),
   content: text("content").notNull(),
+  description: text("description"),
   columnId: text("column_id").notNull(),
-  boardId: uuid("board_id")
-    .notNull()
-    .references(() => boards.id, { onDelete: "cascade" }),
+  boardId: uuid("board_id").references(() => boards.id),
   userId: uuid("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  order: integer("order").notNull(),
+    .references(() => users.id)
+    .notNull(),
+  assignedTo: uuid("assigned_to").references(() => users.id),
+  order: integer("order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const comments = pgTable("comments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  taskId: uuid("task_id")
+    .references(() => tasks.id, { onDelete: "cascade" })
+    .notNull(),
+  userId: uuid("user_id")
+    .references(() => users.id)
+    .notNull(),
+  content: text("content").notNull(),
+  isEdited: boolean("is_edited").default(false).notNull(),
+  isDeleted: boolean("is_deleted").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const boardsRelations = relations(boards, ({ many }) => ({
@@ -49,3 +65,19 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
     references: [boards.id],
   }),
 }));
+
+export const notifications = pgTable("notifications", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  recipientId: uuid("recipient_id")
+    .references(() => users.id)
+    .notNull(),
+  senderId: uuid("sender_id")
+    .references(() => users.id)
+    .notNull(),
+  commentId: uuid("comment_id").references(() => comments.id, {
+    onDelete: "cascade",
+  }),
+  type: text("type").notNull().default("mention"),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

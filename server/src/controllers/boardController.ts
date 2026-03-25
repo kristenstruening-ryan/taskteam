@@ -4,7 +4,7 @@ import { createBoardSchema } from "../middleware/validationMiddleware";
 import { BoardService } from "../services/boardService";
 import { db } from "../db";
 import { boards, tasks } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export const getBoardData = async (req: AuthRequest, res: Response) => {
   try {
@@ -27,14 +27,21 @@ export const getBoardData = async (req: AuthRequest, res: Response) => {
 };
 
 export const createBoard = async (req: AuthRequest, res: Response) => {
-  try {
-    const { title } = createBoardSchema.parse(req.body);
-    const userId = req.userId!;
+  const { title } = req.body;
+  const userId = req.userId;
 
-    const board = await BoardService.createBoard(title, userId);
-    res.status(201).json(board);
+  if (!userId) return res.status(401).json({ error: "Unauthorized" });
+  if (!title) return res.status(400).json({ error: "Title is required" });
+
+  try {
+    const [newBoard] = await db
+      .insert(boards)
+      .values({ title, userId })
+      .returning();
+
+    res.status(201).json(newBoard);
   } catch (error) {
-    res.status(400).json({ error: "Invalid board data" });
+    res.status(500).json({ error: "Failed to create board" });
   }
 };
 
@@ -52,5 +59,23 @@ export const getUserBoards = async (req: AuthRequest, res: Response) => {
     res.json(userBoards);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch boards" });
+  }
+};
+
+export const deleteBoard = async (req: AuthRequest, res: Response) => {
+  const { boardId } = req.params;
+  const userId = req.userId;
+
+  try {
+    const deletedRows = await db
+      .delete(boards)
+      .where(and(eq(boards.id, boardId), eq(boards.userId, userId!)))
+      .returning();
+    if (deletedRows.length === 0) {
+      return res.status(404).json({ error: "Board not found or unauthorized" });
+    }
+    res.json({ message: "Board deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete board" });
   }
 };

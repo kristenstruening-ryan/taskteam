@@ -3,6 +3,9 @@ import { AuthRequest } from "../types";
 import { TaskService } from "../services/taskService";
 import { createTaskSchema } from "../middleware/validationMiddleware";
 import { ZodError } from "zod";
+import { db } from "../db";
+import { eq } from "drizzle-orm";
+import { tasks } from "../db/schema";
 
 export const getTasks = async (req: AuthRequest, res: Response) => {
   try {
@@ -75,5 +78,50 @@ export const updateTaskPosition = async (req: AuthRequest, res: Response) => {
     const errorMessage =
       error instanceof Error ? error.message : "Failed to update task position";
     res.status(500).json({ error: errorMessage });
+  }
+};
+
+export const deleteTask = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const userId = req.userId;
+
+    const deleted = await db.delete(tasks).where(eq(tasks.id, id)).returning();
+
+    if (!deleted.length)
+      return res.status(404).json({ error: "Task not found" });
+    res.json({ message: "task deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete task" });
+  }
+};
+
+export const updateTask = async (req: AuthRequest, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { description, content, columnId, assignedTo } = req.body;
+    const userId = req.userId;
+
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const updatedTask = await db
+      .update(tasks)
+      .set({
+        description,
+        content,
+        columnId,
+        assignedTo
+      })
+      .where(eq(tasks.id, id))
+      .returning();
+
+    if (!updatedTask.length) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    res.json(updatedTask[0]);
+  } catch (error) {
+    console.error("Error updating task:", error);
+    res.status(500).json({ error: "Failed to update task" });
   }
 };
