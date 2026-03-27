@@ -5,18 +5,18 @@ import express from "express";
 import cors from "cors";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { verifyToken } from "./utils/authUtils";
-import taskRoutes from "./routes/taskRoutes";
-import authRoutes from "./routes/authRoutes";
-import boardRoutes from "./routes/boardRoutes";
-import commentRoutes from "./routes/commentRoutes";
-import notificationRoutes from "./routes/notificationRoutes";
-import userRoutes from "./routes/userRoutes";
-import { registerTaskHandlers } from "./sockets/taskHandler";
 import { sql } from "drizzle-orm";
 import { db } from "./db";
 
+import rootRouter from "./routes";
+
+import { registerTaskHandlers } from "./sockets/taskHandler";
+import { AuthService } from "./services/authService";
+import { errorHandler } from "./middleware/errorMiddleware";
+
 export const app = express();
+
+app.use(express.json());
 app.use(
   cors({
     origin: "http://localhost:3000",
@@ -25,6 +25,7 @@ app.use(
     credentials: true,
   }),
 );
+
 app.get("/health", async (req, res) => {
   try {
     await db.execute(sql`SELECT 1`);
@@ -34,20 +35,13 @@ app.get("/health", async (req, res) => {
   }
 });
 
-const httpServer = createServer(app);
+app.use("/api", rootRouter);
+app.use(errorHandler);
 
+const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: { origin: "*" },
 });
-
-app.use(express.json());
-
-app.use("/api/auth", authRoutes);
-app.use("/api/tasks", taskRoutes);
-app.use("/api/comments", commentRoutes);
-app.use("/api/notifications", notificationRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/boards", boardRoutes);
 
 io.use((socket, next) => {
   const token = socket.handshake.auth.token;
@@ -57,8 +51,7 @@ io.use((socket, next) => {
       throw new Error("No token provided");
     }
 
-    const userId = verifyToken(token);
-
+    const userId = AuthService.verifyToken(token);
     (socket as any).userId = userId;
 
     next();

@@ -1,200 +1,133 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import api from "@/lib/api";
-import type { Task, Comment } from "@/shared/types";
-
-interface TaskSidebarProps {
-  task: Task;
-  onClose: () => void;
-  onUpdateDescription: (taskId: string, desc: string) => void;
-}
+import type { TaskSidebarProps } from "@/shared/types";
+import CommentList from "./CommentList";
 
 export default function TaskSidebar({
   task,
+  currentUser,
   onClose,
   onUpdateDescription,
+  onUpdateTask,
+  members = [],
 }: TaskSidebarProps) {
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [commentText, setCommentText] = useState("");
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
-  const [editText, setEditText] = useState("");
+  const [description, setDescription] = useState(task.description || "");
+  const [dueDate, setDueDate] = useState(task.dueDate || "");
+  const [assignedTo, setAssignedTo] = useState<string>(
+    typeof task.assignedUser === "string"
+      ? task.assignedUser
+      : task.assignedUser?.id || "",
+  );
 
-  const fetchComments = useCallback(async () => {
-    if (!task?.id) return;
+  const handleUpdateAssignment = async (userId: string) => {
+    const value = userId === "" ? null : userId;
+    setAssignedTo(userId);
     try {
-      const res = await api.get(`/comments/${task.id}`);
-      setComments(res.data);
-    } catch (err) {
-      console.error("Fetch comments failed", err);
-    }
-  }, [task.id]);
-
-  useEffect(() => {
-    let isIgnore = false;
-    const load = async () => {
-      if (!isIgnore) await fetchComments();
-    };
-    load();
-    return () => {
-      isIgnore = true;
-    };
-  }, [fetchComments]);
-
-  const handlePostComment = async () => {
-    if (!commentText.trim()) return;
-    try {
-      await api.post(`/comments/${task.id}`, { content: commentText });
-      setCommentText("");
-      fetchComments();
-    } catch (err) {
-      console.error(err);
+      await api.patch(`/tasks/${task.id}`, { assignedTo: value });
+      onUpdateTask();
+    } catch (error) {
+      console.error(error, "Failed to update assignee");
     }
   };
 
-  const handleUpdateComment = async (commentId: string) => {
-    if (!editText.trim()) return;
+  const handleUpdateDate = async (date: string) => {
+    setDueDate(date);
     try {
-      await api.patch(`/comments/${commentId}`, { content: editText });
-      setEditingCommentId(null);
-      fetchComments();
+      await api.patch(`/tasks/${task.id}`, { dueDate: date });
     } catch (err) {
-      console.error(err);
+      console.error("Failed to update date", err);
     }
   };
 
-  const handleDeleteComment = async (id: string) => {
-    try {
-      await api.delete(`/comments/${id}`);
-      fetchComments();
-    } catch (err) {
-      console.error(err);
-    }
+  const getSelectedInitial = () => {
+    const member = members?.find((m) => m.userId === assignedTo);
+    if (!member) return "U";
+    const identifier = member.user.name || member.user.email || "U";
+    return identifier.charAt(0).toUpperCase();
   };
 
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-2xl border-l border-slate-200 z-50 p-6 flex flex-col animate-in slide-in-from-right">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-slate-800">Task Details</h2>
+    <div className="fixed inset-y-0 right-0 w-112.5 bg-white shadow-2xl z-100 flex flex-col animate-in slide-in-from-right duration-300 border-l border-slate-100">
+      <div className="p-8 border-b border-slate-50 flex justify-between items-start">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="px-2 py-0.5 rounded-md bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-wider">
+              Task Detail
+            </span>
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 leading-tight">
+            {task.content}
+          </h2>
+        </div>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-slate-600 text-2xl"
+          className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400"
         >
           ✕
         </button>
       </div>
 
-      <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-        Description
-      </label>
-      <textarea
-        className="mt-2 w-full p-4 bg-slate-50 border border-slate-200 rounded-xl text-sm min-h-40 outline-none resize-none focus:ring-2 focus:ring-blue-500/20 transition-all"
-        placeholder="Add details..."
-        defaultValue={task.description || ""}
-        onBlur={(e) => onUpdateDescription(task.id, e.target.value)}
-      />
-
-      <div className="mt-8 flex flex-col flex-1 overflow-hidden">
-        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-          Discussion
-        </label>
-
-        <div className="mt-4 flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-          {comments.length === 0 ? (
-            <p className="text-xs text-slate-400 italic text-center py-4">
-              No comments yet.
-            </p>
-          ) : (
-            comments.map((c) => (
-              <div
-                key={c.id}
-                className={`p-3 rounded-xl border ${c.isDeleted ? "bg-slate-50 border-slate-100 opacity-60" : "bg-white border-slate-200 shadow-sm"}`}
-              >
-                <div className="flex justify-between mb-1 items-center">
-                  <span className="text-[10px] font-bold text-blue-600">
-                    {c.user?.email || "Team Member"}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    {c.isEdited && !c.isDeleted && (
-                      <span className="text-[9px] text-slate-400 italic">
-                        (edited)
-                      </span>
-                    )}
-                    <span className="text-[9px] text-slate-400">
-                      {new Date(c.createdAt).toLocaleTimeString()}
-                    </span>
-                    {!c.isDeleted && (
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => {
-                            setEditingCommentId(c.id);
-                            setEditText(c.content);
-                          }}
-                          className="text-slate-300 hover:text-blue-500 text-xs"
-                        >
-                          ✎
-                        </button>
-                        <button
-                          onClick={() => handleDeleteComment(c.id)}
-                          className="text-slate-300 hover:text-red-500 text-xs"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {editingCommentId === c.id ? (
-                  <div className="mt-2">
-                    <textarea
-                      className="w-full p-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      value={editText}
-                      onChange={(e) => setEditText(e.target.value)}
-                    />
-                    <div className="flex justify-end gap-2 mt-1">
-                      <button
-                        onClick={() => setEditingCommentId(null)}
-                        className="text-[10px] font-bold text-slate-400"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={() => handleUpdateComment(c.id)}
-                        className="text-[10px] font-bold text-blue-600"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <p
-                    className={`text-sm leading-relaxed ${c.isDeleted ? "text-slate-400 italic" : "text-slate-700"}`}
-                  >
-                    {c.content}
-                  </p>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="mt-4 relative">
+      <div className="flex-1 overflow-y-auto p-8 space-y-10">
+        <section>
+          <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3 block">
+            Assigned To
+          </label>
+          <div className="flex items-center gap-3 bg-slate-50 border border-slate-100 p-3 rounded-2xl hover:border-blue-200 transition-all">
+            <div className="w-8 h-8 rounded-full bg-slate-800 text-white text-[10px] flex items-center justify-center font-black shrink-0 uppercase shadow-sm">
+              {getSelectedInitial()}
+            </div>
+            <select
+              value={assignedTo || ""}
+              onChange={(e) => handleUpdateAssignment(e.target.value)}
+              className="flex-1 bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer appearance-none"
+            >
+              <option value="">Unassigned</option>
+              {members?.map((member) => (
+                <option key={member.userId} value={member.userId}>
+                  {member.user.name || member.user.email}
+                </option>
+              ))}
+            </select>
+            <span className="text-slate-400 text-xs pr-2">▼</span>
+          </div>
+        </section>
+        <section>
+          <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3 block">
+            Expected Done By
+          </label>
           <input
-            type="text"
-            className="w-full p-3 pr-12 border border-slate-200 rounded-xl text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none transition-all"
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handlePostComment()}
-            placeholder="Write a comment..."
+            type="date"
+            value={dueDate ? dueDate.split("T")[0] : ""}
+            onChange={(e) => handleUpdateDate(e.target.value)}
+            className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all cursor-pointer"
           />
-          <button
-            onClick={handlePostComment}
-            className="absolute right-2 top-1.5 p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"
-          >
-            Send
-          </button>
-        </div>
+        </section>
+
+        <section>
+          <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3 block">
+            Description
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            onBlur={() => onUpdateDescription(task.id, description)}
+            placeholder="Add a more detailed description..."
+            className="w-full h-32 bg-slate-50 border border-slate-100 p-4 rounded-2xl text-sm font-medium text-slate-600 placeholder:text-slate-300 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-none"
+          />
+        </section>
+
+        <section className="flex flex-col min-h-100">
+          <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-4 block">
+            Task Activity
+          </label>
+          <CommentList
+            boardId={task.boardId}
+            taskId={task.id}
+            currentUser={currentUser}
+          />
+        </section>
       </div>
     </div>
   );

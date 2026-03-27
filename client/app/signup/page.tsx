@@ -7,28 +7,42 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function SignupPage() {
+  const [name, setName] = useState(""); // 🆕 Added Name State
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const handleSignup = async (e: React.SyntheticEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError("");
+
     try {
-      const loginRes = await api.post("/auth/register", { email, password });
-      localStorage.setItem("token", loginRes.data.token);
-      localStorage.setItem("user_email", loginRes.data.user.email);
+      const registerRes = await api.post("/auth/register", {
+        name,
+        email,
+        password,
+      });
+
+      localStorage.setItem("token", registerRes.data.token);
+      localStorage.setItem("user_email", registerRes.data.user.email);
+
       window.dispatchEvent(new Event("storage"));
+
       router.push("/dashboard");
     } catch (error) {
       const axiosError = error as AxiosError<{ error: string }>;
       setError(axiosError.response?.data?.error || "Signup failed. Try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-[calc(100-64px)] flex items-center justify-center bg-slate-50 p-6">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-10 border border-slate-100">
+    <div className="min-h-[calc(100vh-64px)] flex items-center justify-center bg-slate-50/50 p-6">
+      <div className="w-full max-w-md bg-white rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.04)] p-10 border border-slate-100 animate-in fade-in zoom-in-95 duration-500">
         <div className="text-center mb-10">
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">
             Create Account
@@ -39,12 +53,26 @@ export default function SignupPage() {
         </div>
 
         {error && (
-          <div className="mb-6 p-4 bg-red-50 text-red-600 text-xs font-bold rounded-xl border border-red-100">
+          <div className="mb-6 p-4 bg-red-50 text-red-600 text-xs font-bold rounded-2xl border border-red-100">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSignup} className="space-y-5">
+        <form onSubmit={handleSignup} className="space-y-4">
+          <div>
+            <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 ml-1">
+              Full Name
+            </label>
+            <input
+              type="text"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
+              placeholder="John D."
+            />
+          </div>
+
           <div>
             <label className="block text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2 ml-1">
               Email Address
@@ -54,7 +82,7 @@ export default function SignupPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
               placeholder="kristen@example.com"
             />
           </div>
@@ -68,16 +96,17 @@ export default function SignupPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 placeholder:text-slate-400 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium"
               placeholder="••••••••"
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold text-sm shadow-lg shadow-blue-500/20 transition-all mt-4"
+            disabled={loading}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-blue-200 transition-all mt-4 active:scale-[0.98] disabled:opacity-70"
           >
-            Create Free Account
+            {loading ? "Creating..." : "Create Free Account"}
           </button>
         </form>
 
@@ -86,7 +115,7 @@ export default function SignupPage() {
             Already have an account?{" "}
             <Link
               href="/login"
-              className="text-blue-600 hover:underline font-bold"
+              className="text-blue-600 hover:text-blue-700 font-bold transition-colors"
             >
               Log In
             </Link>

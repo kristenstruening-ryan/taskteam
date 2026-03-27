@@ -1,99 +1,73 @@
 import { Response } from "express";
 import { AuthRequest } from "../types";
-import { db } from "../db";
-import { comments, users } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { CommentService } from "../services/commentService";
+import { NotificationService } from "../services/notificationService";
 import { extractMentions } from "../utils/mentionUtils";
-import { createMentionNotifications } from "./notificationController";
+import { catchAsync } from "../utils/catchAsync";
 
-export const addComment = async (req: AuthRequest, res: Response) => {
-  const { taskId } = req.params;
-  const { content } = req.body;
-  const userId = req.userId;
+export const addComment = catchAsync(
+  async (req: AuthRequest, res: Response) => {
+    const { content, boardId, taskId } = req.body;
 
-  if (!userId) return res.status(401).json({ error: "User not authenticated" });
+    if (!boardId) {
+      return res.status(400).json({ error: "boardId is required" });
+    }
 
-  try {
-    const [newComment] = await db
-      .insert(comments)
-      .values({ taskId, userId, content })
-      .returning();
+    const newComment = await CommentService.addComment(
+      boardId,
+      req.userId!,
+      content,
+      taskId,
+    );
 
     const mentionedEmails = extractMentions(content);
     if (mentionedEmails.length > 0) {
-      await createMentionNotifications(mentionedEmails, userId, newComment.id);
+      await NotificationService.createMentionNotifications(
+        mentionedEmails,
+        req.userId!,
+        newComment.id,
+      );
     }
 
     res.status(201).json(newComment);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to post comment" });
-  }
-};
+  },
+);
 
-export const getComments = async (req: AuthRequest, res: Response) => {
-  const { taskId } = req.params;
-
-  try {
-    const data = await db
-      .select({
-        id: comments.id,
-        content: comments.content,
-        createdAt: comments.createdAt,
-        isEdited: comments.isEdited,
-        isDeleted: comments.isDeleted,
-        user: { email: users.email },
-      })
-      .from(comments)
-      .leftJoin(users, eq(comments.userId, users.id))
-      .where(eq(comments.taskId, taskId))
-      .orderBy(comments.createdAt);
-
+export const getBoardComments = catchAsync(
+  async (req: AuthRequest, res: Response) => {
+    const { boardId } = req.params;
+    const data = await CommentService.getCommentsByBoard(boardId);
     res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to fetch" });
-  }
-};
+  },
+);
 
-export const updateComment = async (req: AuthRequest, res: Response) => {
-  const { commentId } = req.params;
-  const { content } = req.body;
-  const userId = req.userId;
+export const getTaskComments = catchAsync(
+  async (req: AuthRequest, res: Response) => {
+    const data = await CommentService.getCommentsByTask(req.params.taskId);
+    res.json(data);
+  },
+);
 
-  if (!userId) return res.status(401).json({ error: "Unauthorized" });
-
-  try {
-    const updatedRows = await db
-      .update(comments)
-      .set({ content, isEdited: true, updatedAt: new Date() })
-      .where(and(eq(comments.id, commentId), eq(comments.userId, userId)))
-      .returning();
-
-    if (updatedRows.length === 0)
+export const updateComment = catchAsync(
+  async (req: AuthRequest, res: Response) => {
+    const updated = await CommentService.updateComment(
+      req.params.commentId,
+      req.userId!,
+      req.body.content,
+    );
+    if (!updated)
       return res.status(403).json({ error: "Unauthorized or not found" });
-    res.json(updatedRows[0]);
-  } catch (error) {
-    res.status(500).json({ error: "Update failed" });
-  }
-};
+    res.json(updated);
+  },
+);
 
-export const deleteComment = async (req: AuthRequest, res: Response) => {
-  const { commentId } = req.params;
-  const userId = req.userId;
-  if (!userId) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  try {
-    const deletedRows = await db
-      .update(comments)
-      .set({ content: "This comment was deleted.", isDeleted: true })
-      .where(and(eq(comments.id, commentId), eq(comments.userId, userId)))
-      .returning();
-
-    if (deletedRows.length === 0)
-      return res.status(403).json({ error: "Unauthorized" });
-    res.json(deletedRows[0]);
-  } catch (error) {
-    res.status(500).json({ error: "Delete failed" });
-  }
-};
+export const deleteComment = catchAsync(
+  async (req: AuthRequest, res: Response) => {
+    const deleted = await CommentService.deleteComment(
+      req.params.commentId,
+      req.userId!,
+    );
+    if (!deleted) return res.status(403).json({ error: "Unauthorized" });
+    res.json(deleted);
+  },
+);

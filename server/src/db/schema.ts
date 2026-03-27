@@ -6,6 +6,7 @@ import {
   timestamp,
   boolean,
   unique,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -37,14 +38,16 @@ export const tasks = pgTable("tasks", {
     .notNull(),
   assignedTo: uuid("assigned_to").references(() => users.id),
   order: integer("order").notNull().default(0),
+  dueDate: timestamp("due_date"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const comments = pgTable("comments", {
   id: uuid("id").primaryKey().defaultRandom(),
-  taskId: uuid("task_id")
-    .references(() => tasks.id, { onDelete: "cascade" })
+  boardId: uuid("board_id")
+    .references(() => boards.id, { onDelete: "cascade" })
     .notNull(),
+  taskId: uuid("task_id").references(() => tasks.id, { onDelete: "cascade" }),
   userId: uuid("user_id")
     .references(() => users.id)
     .notNull(),
@@ -55,15 +58,58 @@ export const comments = pgTable("comments", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const boardsRelations = relations(boards, ({ many }) => ({
+export const boardMembers = pgTable(
+  "board_members",
+  {
+    boardId: uuid("board_id")
+      .references(() => boards.id, { onDelete: "cascade" })
+      .notNull(),
+    userId: uuid("user_id")
+      .references(() => users.id, { onDelete: "cascade" })
+      .notNull(),
+    role: text("role").default("member").notNull(), // 'owner', 'admin', 'member'
+    joinedAt: timestamp("joined_at").defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.boardId, t.userId] }),
+  }),
+);
+
+export const boardsRelations = relations(boards, ({ many, one }) => ({
+  tasks: many(tasks),
+  members: many(boardMembers),
+  owner: one(users, {
+    fields: [boards.userId],
+    references: [users.id],
+  }),
+}));
+
+export const usersRelations = relations(users, ({ many }) => ({
+  memberships: many(boardMembers),
   tasks: many(tasks),
 }));
 
-export const tasksRelations = relations(tasks, ({ one }) => ({
+export const boardMembersRelations = relations(boardMembers, ({ one }) => ({
+  board: one(boards, {
+    fields: [boardMembers.boardId],
+    references: [boards.id],
+  }),
+  user: one(users, {
+    fields: [boardMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const tasksRelations = relations(tasks, ({ one, many }) => ({
   board: one(boards, {
     fields: [tasks.boardId],
     references: [boards.id],
   }),
+  assignedUser: one(users, {
+    fields: [tasks.assignedTo],
+    references: [users.id],
+  }),
+  comments: many(comments)
 }));
 
 export const notifications = pgTable("notifications", {
@@ -81,3 +127,18 @@ export const notifications = pgTable("notifications", {
   isRead: boolean("is_read").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const commentsRelations = relations(comments, ({ one }) => ({
+  board: one(boards, {
+    fields: [comments.boardId],
+    references: [boards.id],
+  }),
+  task: one(tasks, {
+    fields: [comments.taskId],
+    references: [tasks.id],
+  }),
+  user: one(users, {
+    fields: [comments.userId],
+    references: [users.id],
+  }),
+}));

@@ -3,9 +3,11 @@ export interface Task {
   content: string;
   description?: string | null;
   boardId: string;
-  assignedTo?: User | string | null;
+  assignedUser?: User | string;
+  comments: Comment[];
   columnId: string;
   order: number;
+  dueDate?: string | null;
 }
 
 export interface Board {
@@ -36,7 +38,6 @@ export interface User {
   name: string;
 }
 
-
 export interface NotificationItem {
   id: string;
   senderEmail: string;
@@ -51,4 +52,34 @@ export interface DeleteModalProps {
   onClose: () => void;
   onConfirm: () => void;
   loading?: boolean;
+  variant?: "danger" | "warning";
+  description?: string;
+  confirmText?: string;
+  requireConfirmationText?: string;
+}
+
+export interface BoardMember {
+  userId: string;
+  role: string;
+  user: {
+    name: string | null;
+    email: string;
+  };
+}
+
+export interface MemberSidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+  members: BoardMember[];
+  onRemoveMember: (memberId: string) => void;
+  isOwner: boolean;
+}
+
+export interface TaskSidebarProps {
+  task: Task;
+  currentUser: User | null;
+  members: BoardMember[];
+  onClose: () => void;
+  onUpdateDescription: (taskId: string, desc: string) => void;
+  onUpdateTask: () => void;
 }

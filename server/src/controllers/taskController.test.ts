@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
-import { app } from "../index";
+import { app } from "../app";
 import { db } from "../db";
 import { boards, tasks, users } from "../db/schema";
 import jwt from "jsonwebtoken";
@@ -55,9 +55,9 @@ describe("Task Controller Integration", () => {
 describe("Task Security & Validation", () => {
   it("should not allow User A to update User B's task", async () => {
     const userA_Id = "00000000-0000-4000-8000-00000000000a";
-const userB_Id = "00000000-0000-4000-8000-00000000000b";
-const boardB_Id = "00000000-0000-4000-8000-0000000000b2";
-const taskB_Id = "00000000-0000-4000-8000-0000000000bb";
+    const userB_Id = "00000000-0000-4000-8000-00000000000b";
+    const boardB_Id = "00000000-0000-4000-8000-0000000000b2";
+    const taskB_Id = "00000000-0000-4000-8000-0000000000bb";
 
     await db.insert(users).values([
       { id: userA_Id, email: "a@test.com", password: "123" },

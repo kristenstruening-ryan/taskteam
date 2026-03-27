@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1774482292035,
+      "tag": "0000_jittery_gamma_corps",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1774559181939,
+      "tag": "0001_glorious_robin_chapel",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1774568075506,
+      "tag": "0002_square_agent_brand",
+      "breakpoints": true
+    }
+  ]
+}

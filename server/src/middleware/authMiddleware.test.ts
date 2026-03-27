@@ -1,11 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { authenticate } from "./authMiddleware";
+import {AuthService} from '../services/authService'
 import { AuthRequest } from "../types";
 import { Response } from "express";
-import * as authUtils from "../utils/authUtils"; // Import the utility to mock it
 
 describe("Auth Middleware", () => {
-  // Clear mocks before each test to prevent side effects
   beforeEach(() => {
     vi.restoreAllMocks();
   });
@@ -30,7 +29,7 @@ describe("Auth Middleware", () => {
     const userId = "user-123";
 
     const verifySpy = vi
-      .spyOn(authUtils, "verifyToken")
+      .spyOn(AuthService, "verifyToken")
       .mockReturnValue(userId);
 
     const req = {
@@ -47,7 +46,7 @@ describe("Auth Middleware", () => {
   });
 
   it("should return 401 if token verification fails", () => {
-    vi.spyOn(authUtils, "verifyToken").mockImplementation(() => {
+    vi.spyOn(AuthService, "verifyToken").mockImplementation(() => {
       throw new Error("Invalid token");
     });
 

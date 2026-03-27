@@ -1,22 +1,20 @@
-import type { AuthRequest } from "../types";
-import { users } from "../db/schema";
-import { db } from "../db";
-import { eq } from "drizzle-orm";
 import { Response } from "express";
+import type { AuthRequest } from "../types";
+import { UserService } from "../services/userService";
+import { catchAsync } from "../utils/catchAsync";
 
-export const updateProfile = async (req: AuthRequest, res: Response) => {
+export const updateProfile = catchAsync(async (req: AuthRequest, res: Response) => {
   const { name } = req.body;
-  const userId = req.userId;
 
-  try {
-    const [updatedUser] = await db
-      .update(users)
-      .set({ name })
-      .where(eq(users.id, userId!))
-      .returning({ id: users.id, email: users.email, name: users.name });
-
-    res.json(updatedUser);
-  } catch (error) {
-    res.status(500).json({ error: "Failed to update profile" });
+  if (!name) {
+    return res.status(400).json({ error: "Name is required" });
   }
-};
+
+  const updatedUser = await UserService.updateProfile(req.userId!, name);
+
+  if (!updatedUser) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  res.json(updatedUser);
+});

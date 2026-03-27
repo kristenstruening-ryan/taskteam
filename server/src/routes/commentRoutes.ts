@@ -1,7 +1,8 @@
 import { Router } from "express";
 import {
   addComment,
-  getComments,
+  getTaskComments,
+  getBoardComments,
   deleteComment,
   updateComment,
 } from "../controllers/commentController";
@@ -9,9 +10,13 @@ import { authenticate } from "../middleware/authMiddleware";
 
 const router = Router();
 
-router.post("/:taskId", authenticate, addComment);
+router.get("/test", (req, res) => res.send("Comment routes are working!"));
 
-router.get("/:taskId", authenticate, getComments);
+router.post("/", authenticate, addComment);
+
+router.get("/board/:boardId", authenticate, getBoardComments);
+
+router.get("/task/:taskId", authenticate, getTaskComments);
 
 router.patch("/:commentId", authenticate, updateComment);
 

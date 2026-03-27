@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import request from "supertest";
-import { app } from "../index";
+import { app } from "../app";
 import { db } from "../db";
 import { tasks, users } from "../db/schema";
 
@@ -19,7 +19,6 @@ describe("Auth Controller Integration", () => {
 
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("token");
-    // Depending on your controller, check for .user or direct fields
     expect(response.body.user.email).toBe("kristen@example.com");
   });
 
@@ -36,7 +35,6 @@ describe("Auth Controller Integration", () => {
     });
 
     expect(response.status).toBe(401);
-    // Adjust this to match your controller's error message
     expect(response.body.message).toBe("Invalid credentials");
   });
 });

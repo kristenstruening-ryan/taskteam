@@ -1,24 +1,48 @@
 import { db } from "../db";
-import { boards, tasks } from "../db/schema";
+import { boards, boardMembers, users , } from "../db/schema";
 import { eq, and } from "drizzle-orm";
 
 export const BoardService = {
+  async getBoardById(boardId: string) {
+    return await db.query.boards.findFirst({
+      where: eq(boards.id, boardId),
+      with: {
+        tasks: {
+          with: { comments: true, assignedUser: true },
+        },
+        members: {
+          with: {
+            user: {
+              columns: { id: true, name: true, email: true },
+            },
+          },
+        },
+      },
+    });
+  },
+
   async createBoard(title: string, userId: string) {
-    const [newBoard] = await db
-      .insert(boards)
-      .values({
-        title,
+    return await db.transaction(async (tx) => {
+      const [newBoard] = await tx
+        .insert(boards)
+        .values({ title, userId })
+        .returning();
+
+      await tx.insert(boardMembers).values({
+        boardId: newBoard.id,
         userId,
-      })
-      .returning();
-    return newBoard;
+        role: "owner",
+      });
+
+      return newBoard;
+    });
   },
 
   async getUserBoards(userId: string) {
-    return await db.query.boards.findMany({
-      where: eq(boards.userId, userId),
+    return await db.query.boardMembers.findMany({
+      where: eq(boardMembers.userId, userId),
       with: {
-        tasks: true, 
+        board: true,
       },
     });
   },
