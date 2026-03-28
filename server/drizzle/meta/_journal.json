@@ -22,6 +22,34 @@
       "when": 1774568075506,
       "tag": "0002_square_agent_brand",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1774655666623,
+      "tag": "0003_shiny_magik",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1774661133062,
+      "tag": "0004_blue_rachel_grey",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1774661483085,
+      "tag": "0005_yellow_saracen",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774674263789,
+      "tag": "0006_wealthy_red_hulk",
+      "breakpoints": true
     }
   ]
 }

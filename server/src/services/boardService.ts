@@ -1,6 +1,6 @@
 import { db } from "../db";
-import { boards, boardMembers, users , } from "../db/schema";
-import { eq, and } from "drizzle-orm";
+import { boards, boardMembers } from "../db/schema";
+import { eq, and, ilike } from "drizzle-orm";
 
 export const BoardService = {
   async getBoardById(boardId: string) {
@@ -8,7 +8,12 @@ export const BoardService = {
       where: eq(boards.id, boardId),
       with: {
         tasks: {
-          with: { comments: true, assignedUser: true },
+          with: {
+            comments: {
+              with: { user: { columns: { name: true, email: true } } },
+            },
+            assignedUser: true,
+          },
         },
         members: {
           with: {
@@ -21,16 +26,19 @@ export const BoardService = {
     });
   },
 
-  async createBoard(title: string, userId: string) {
+  async createWorkspace(title: string, userId: string) {
     return await db.transaction(async (tx) => {
       const [newBoard] = await tx
         .insert(boards)
-        .values({ title, userId })
+        .values({
+          title,
+          userId,
+        })
         .returning();
 
       await tx.insert(boardMembers).values({
         boardId: newBoard.id,
-        userId,
+        userId: userId,
         role: "owner",
       });
 
@@ -53,5 +61,16 @@ export const BoardService = {
       .where(and(eq(boards.id, boardId), eq(boards.userId, userId)))
       .returning();
     return deleted;
+  },
+
+  async searchOrganizations(query: string) {
+    return await db
+      .select({
+        id: boards.id,
+        title: boards.title,
+      })
+      .from(boards)
+      .where(ilike(boards.title, `%${query}%`))
+      .limit(5);
   },
 };

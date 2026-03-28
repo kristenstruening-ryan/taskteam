@@ -23,10 +23,20 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
     })
     .returning();
 
-  const token = AuthService.generateToken(newUser.id);
+  const token = AuthService.generateToken(
+    newUser.id,
+    newUser.systemRole,
+    newUser.email,
+    newUser.name ?? "",
+  );
   res.status(201).json({
     token,
-    user: { id: newUser.id, email: newUser.email, name: newUser.name },
+    user: {
+      id: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      systemRole: newUser.systemRole,
+    },
   });
 });
 
@@ -38,10 +48,20 @@ export const login = catchAsync(async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Invalid credentials" });
   }
 
-  const token = AuthService.generateToken(user.id);
+  const token = AuthService.generateToken(
+    user.id,
+    user.systemRole,
+    user.email,
+    user.name ?? "",
+  );
   res.json({
     token,
-    user: { id: user.id, email: user.email, name: user.name },
+    user: {
+      id: user.id,
+      systemRole: user.systemRole,
+      email: user.email,
+      name: user.name,
+    },
   });
 });
 
@@ -49,7 +69,7 @@ export const getMe = catchAsync(async (req: AuthRequest, res: Response) => {
   const user = await AuthService.findUserById(req.userId!);
 
   if (!user) {
-    return res.status(404).json({ error: "User not found" });
+    return res.status(404).json({ error: "User record no longer exists." });
   }
 
   res.json(user);

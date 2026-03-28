@@ -15,14 +15,35 @@ export const AuthService = {
     return await bcrypt.compare(password, hash);
   },
 
-  generateToken(userId: string) {
-    return jwt.sign({ userId }, JWT_SECRET, { expiresIn: "24h" });
+  generateToken(userId: string, systemRole: string, email: string, name: string) {
+    return jwt.sign({ userId, systemRole, email, name }, JWT_SECRET, {
+      expiresIn: "24h",
+    });
   },
 
-  verifyToken(token: string) {
-    const decoded = jwt.verify(token, JWT_SECRET) as { userId: string };
-    if (!decoded.userId) throw new Error("Invalid payload");
-    return decoded.userId;
+  verifyToken(token: string): {
+    userId: string;
+    systemRole: string;
+    email: string;
+    name: string;
+  } {
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as {
+        userId: string;
+        systemRole: string;
+        email: string;
+        name: string;
+      };
+
+      if (!decoded.userId || !decoded.systemRole || !decoded.email || !decoded.name) {
+        throw new Error("Invalid token payload: Missing required fields");
+      }
+
+      return decoded;
+    } catch (error) {
+      console.error("JWT Error:", error);
+      throw new Error("Token verification failed");
+    }
   },
 
   async findUserByEmail(email: string) {
@@ -34,7 +55,13 @@ export const AuthService = {
   async findUserById(id: string) {
     return await db.query.users.findFirst({
       where: eq(users.id, id),
-      columns: { password: false }, 
+      columns: {
+        id: true,
+        name: true,
+        email: true,
+        systemRole: true,
+        createdAt: true,
+      },
     });
-  }
+  },
 };

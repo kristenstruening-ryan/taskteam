@@ -3,16 +3,18 @@
 import { useState } from "react";
 import api from "@/lib/api";
 import { AxiosError } from "axios";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function SignupPage() {
-  const [name, setName] = useState(""); // 🆕 Added Name State
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const handleSignup = async (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -20,21 +22,24 @@ export default function SignupPage() {
     setError("");
 
     try {
-      const registerRes = await api.post("/auth/register", {
-        name,
-        email,
-        password,
-      });
+      const res = await api.post("/auth/signup", { name, email, password });
 
-      localStorage.setItem("token", registerRes.data.token);
-      localStorage.setItem("user_email", registerRes.data.user.email);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
 
       window.dispatchEvent(new Event("storage"));
 
-      router.push("/dashboard");
+      const callback = searchParams.get("callback");
+      const inviteToken = searchParams.get("token");
+
+      if (callback && inviteToken) {
+        router.push(`${callback}?token=${inviteToken}`);
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       const axiosError = error as AxiosError<{ error: string }>;
-      setError(axiosError.response?.data?.error || "Signup failed. Try again.");
+      setError(axiosError.response?.data?.error || "Signup failed.");
     } finally {
       setLoading(false);
     }

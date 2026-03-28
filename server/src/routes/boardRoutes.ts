@@ -5,6 +5,7 @@ import {
   deleteBoard,
   getBoardData,
   getUserBoards,
+  searchBoards,
 } from "../controllers/boardController";
 
 const router = Router();
@@ -12,6 +13,7 @@ const router = Router();
 router.get("/:boardId", authenticate, getBoardData);
 router.post("/", authenticate, createBoard);
 router.get("/", authenticate, getUserBoards);
+router.get('/search', authenticate, searchBoards)
 router.delete("/:boardId", authenticate, deleteBoard);
 
 export default router;

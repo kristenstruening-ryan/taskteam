@@ -9,8 +9,18 @@ describe("AuthService", () => {
     expect(hashedPassword.length).toBeGreaterThan(20);
   });
   it("should generate a valid JWT token for a user", () => {
-    const user = { id: "123", email: "test@example.com" };
-    const token = AuthService.generateToken(user.id);
+    const user = {
+      id: "123",
+      name: "Guest User",
+      email: "test@example.com",
+      systemRole: "admin",
+    };
+    const token = AuthService.generateToken(
+      user.id,
+      user.systemRole,
+      user.email,
+      user.name,
+    );
     expect(typeof token).toBe("string");
     expect(token.split(".").length).toBe(3);
   });

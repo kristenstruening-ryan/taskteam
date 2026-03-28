@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Response, Request } from "express";
 import { AuthRequest } from "../types";
 import { BoardService } from "../services/boardService";
 import { catchAsync } from "../utils/catchAsync";
@@ -24,11 +24,13 @@ export const getBoardData = catchAsync(
 export const createBoard = catchAsync(
   async (req: AuthRequest, res: Response) => {
     const { title } = req.body;
+    const userId = req.userId;
+
     if (!title) {
-      return res.status(400).json({ error: "Title is required" });
+      return res.status(400).json({ error: "Board title is required" });
     }
 
-    const newBoard = await BoardService.createBoard(title, req.userId!);
+    const newBoard = await BoardService.createWorkspace(title, userId!);
     res.status(201).json(newBoard);
   },
 );
@@ -36,17 +38,14 @@ export const createBoard = catchAsync(
 export const getUserBoards = catchAsync(
   async (req: AuthRequest, res: Response) => {
     const memberships = await BoardService.getUserBoards(req.userId!);
-
-    const boards = memberships.map((m: any) => m.board);
-
-    res.json(boards);
+    const userBoards = memberships.map((m: any) => m.board);
+    res.json(userBoards);
   },
 );
 
 export const deleteBoard = catchAsync(
   async (req: AuthRequest, res: Response) => {
     const { boardId } = req.params;
-
     const deleted = await BoardService.deleteBoard(boardId, req.userId!);
 
     if (!deleted) {
@@ -54,5 +53,18 @@ export const deleteBoard = catchAsync(
     }
 
     res.json({ message: "Board deleted successfully" });
+  },
+);
+
+export const searchBoards = catchAsync(
+  async (req: AuthRequest, res: Response) => {
+    const query = req.query.query as string;
+
+    if (!query) {
+      return res.status(400).json({ error: "Search query is required" });
+    }
+
+    const results = await BoardService.searchOrganizations(query);
+    res.json(results);
   },
 );

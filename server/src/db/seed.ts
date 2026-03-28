@@ -6,13 +6,20 @@ import {
   comments,
   notifications,
   boardMembers,
+  boardInvites,
+  platformAccessRequests,
+  auditLogs, // 1. Import the new table
 } from "./schema";
 import bcrypt from "bcrypt";
 
 async function seed() {
-  console.log("🌱 Starting fresh seed with Guest Accounts and Board Chat...");
+  console.log("🌱 Starting Comprehensive Seed...");
 
+  // 2. Clear existing data (added auditLogs to the top of the delete chain)
   await db.delete(notifications);
+  await db.delete(auditLogs); // Clear logs
+  await db.delete(platformAccessRequests);
+  await db.delete(boardInvites);
   await db.delete(comments);
   await db.delete(tasks);
   await db.delete(boardMembers);
@@ -21,137 +28,99 @@ async function seed() {
 
   const hashedPassword = await bcrypt.hash("password123", 10);
 
-  const [kristen] = await db
-    .insert(users)
-    .values({
-      name: "Kristen S.",
-      email: "kristen@example.com",
-      password: hashedPassword,
-    })
-    .returning();
+  // 3. Create Users
+  const [admin] = await db.insert(users).values({
+    name: "System Admin",
+    email: "admin@taskteam.com",
+    password: hashedPassword,
+    systemRole: "admin",
+  }).returning();
 
-  const [guestOwner] = await db
-    .insert(users)
-    .values({
-      name: "Guest Owner",
-      email: "owner@guest.com",
-      password: hashedPassword,
-    })
-    .returning();
+  const [kristen] = await db.insert(users).values({
+    name: "Kristen S.",
+    email: "kristen@example.com",
+    password: hashedPassword,
+    systemRole: "user",
+  }).returning();
 
-  const [guestTeammate] = await db
-    .insert(users)
-    .values({
-      name: "Guest Teammate",
-      email: "team@guest.com",
-      password: hashedPassword,
-    })
-    .returning();
+  const [lead] = await db.insert(users).values({
+    name: "Project Lead",
+    email: "owner@guest.com",
+    password: hashedPassword,
+    systemRole: "user",
+  }).returning();
 
-  console.log("👤 Created Kristen, Guest Owner, and Guest Teammate.");
+  // 4. Create Board
+  const [board] = await db.insert(boards).values({
+    title: "Q1 Product Launch",
+    userId: lead.id,
+  }).returning();
 
-  const [board] = await db
-    .insert(boards)
-    .values({
-      title: "TaskTeam Alpha Launch",
-      userId: guestOwner.id,
-    })
-    .returning();
-
+  // 5. Add Members
   await db.insert(boardMembers).values([
-    { boardId: board.id, userId: guestOwner.id, role: "owner" },
-    { boardId: board.id, userId: guestTeammate.id, role: "member" },
+    { boardId: board.id, userId: lead.id, role: "owner" },
     { boardId: board.id, userId: kristen.id, role: "member" },
+    { boardId: board.id, userId: admin.id, role: "member" },
   ]);
 
-  const [task1, task2, task3, task4] = await db
-    .insert(tasks)
-    .values([
-      {
-        content: "Finalize Prisma Schema",
-        description:
-          "Ensure all relations are mapped for comments and notifications.",
-        columnId: "done",
-        boardId: board.id,
-        userId: guestOwner.id,
-        assignedTo: guestOwner.id,
-        dueDate: new Date("2026-03-01"),
-        order: 0,
-      },
-      {
-        content: "Design Task Sidebar",
-        description: "Needs to support description editing and comment feed.",
-        columnId: "in-progress",
-        boardId: board.id,
-        userId: guestOwner.id,
-        assignedTo: guestTeammate.id,
-        dueDate: new Date("2026-03-25"),
-        order: 0,
-      },
-      {
-        content: "Implement Board Chat UI",
-        description: "Add a side panel for general team discussions.",
-        columnId: "todo",
-        boardId: board.id,
-        userId: guestOwner.id,
-        assignedTo: kristen.id,
-        dueDate: new Date("2026-04-15"),
-        order: 0,
-      },
-      {
-        content: "Bug: Sidebar scroll jump",
-        description: "Sidebar jumps to top when adding a new comment.",
-        columnId: "todo",
-        boardId: board.id,
-        userId: guestOwner.id,
-        assignedTo: guestTeammate.id,
-        order: 1,
-      },
-    ])
-    .returning();
+  // 6. Create Tasks
+  const [task2] = await db.insert(tasks).values({
+    content: "API Authentication Refactor",
+    description: "Move to the new modular Drizzle driver system.",
+    columnId: "in-progress",
+    boardId: board.id,
+    userId: kristen.id,
+    assignedTo: kristen.id,
+    order: 0,
+  }).returning();
 
-  const [comment1] = await db
-    .insert(comments)
-    .values([
-      {
-        boardId: board.id,
-        taskId: task2.id,
-        userId: guestTeammate.id,
-        content:
-          "Just updated the CSS for the sidebar, @owner@guest.com check it out!",
-      },
-      {
-        boardId: board.id,
-        taskId: null,
-        userId: guestOwner.id,
-        content:
-          "Welcome to the project everyone! Use this space for general updates.",
-      },
-      {
-        boardId: board.id,
-        taskId: null,
-        userId: kristen.id,
-        content:
-          "Excited to get started on the Chat UI. I'll post wireframes here later.",
-      },
-    ])
-    .returning();
-
-  await db.insert(notifications).values([
+  // 7. Create Comments
+  await db.insert(comments).values([
     {
-      recipientId: guestOwner.id,
-      senderId: guestTeammate.id,
-      commentId: comment1.id,
-      type: "mention",
-      isRead: false,
-    },
+      content: "Refactoring the schema to use Drizzle instead of Prisma!",
+      taskId: task2.id,
+      userId: kristen.id,
+      boardId: board.id,
+    }
   ]);
+
+  // 8. Access Requests
+  const [request] = await db.insert(platformAccessRequests).values({
+    boardId: board.id,
+    requesterId: lead.id,
+    targetEmail: "new-hire@company.com",
+    status: "pending",
+  }).returning();
+
+  // 9. NEW: Add some historical Audit Logs
+  await db.insert(auditLogs).values([
+    {
+      email: "previous-intern@company.com",
+      action: "denied",
+      adminName: "System Admin",
+      timestamp: new Date(Date.now() - 86400000), // 1 day ago
+    },
+    {
+      email: "senior-dev@company.com",
+      action: "approved",
+      adminName: "System Admin",
+      timestamp: new Date(Date.now() - 43200000), // 12 hours ago
+    }
+  ]);
+
+  await db.insert(notifications).values({
+    recipientId: admin.id,
+    senderId: lead.id,
+    requestId: request.id,
+    type: "access_request",
+    content: `Project Lead requested platform access for new-hire@company.com`,
+  });
 
   console.log(`
-✅ Seeding complete!
-🔑 Guest Owner: owner@guest.com / password123
-🔑 Guest Teammate: team@guest.com / password123
-🚀 Board: "${board.title}" is ready for demo.
+✅ Seed Complete!
+🚀 Board Created: "Q1 Product Launch"
+🔑 Admin: admin@taskteam.com / password123
+📜 Audit Logs Generated: 2
   `);
   process.exit(0);
 }

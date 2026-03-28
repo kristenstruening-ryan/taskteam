@@ -1,3 +1,23 @@
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+}
+
+export interface AuthUser extends User {
+  systemRole: "admin" | "user";
+}
+
+export interface AuthResponse {
+  token: string;
+  user: AuthUser;
+}
+
+export interface BoardMember {
+  userId: string;
+  role: string;
+  user: User;
+}
 export interface Task {
   id: string;
   content: string;
@@ -32,18 +52,16 @@ export interface Comment {
   isEdited: boolean;
 }
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-}
-
 export interface NotificationItem {
   id: string;
   senderEmail: string;
-  commentContent: string;
   isRead: boolean;
   createdAt: string;
+  type: "mention" | "access_request" | "request_approved" | "request_denied";
+  content: string | null;
+  commentContent?: string | null;
+  taskId?: string;
+  boardId?: string;
 }
 
 export interface DeleteModalProps {
@@ -56,15 +74,6 @@ export interface DeleteModalProps {
   description?: string;
   confirmText?: string;
   requireConfirmationText?: string;
-}
-
-export interface BoardMember {
-  userId: string;
-  role: string;
-  user: {
-    name: string | null;
-    email: string;
-  };
 }
 
 export interface MemberSidebarProps {
@@ -82,4 +91,31 @@ export interface TaskSidebarProps {
   onClose: () => void;
   onUpdateDescription: (taskId: string, desc: string) => void;
   onUpdateTask: () => void;
+}
+
+export interface AccessRequest {
+  id: string;
+  targetEmail: string;
+  boardId: string;
+  requesterId: string;
+  status: string;
+  createdAt: string;
+}
+
+export interface AuthResonse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    systemRole: string;
+  };
+}
+
+export interface ActivityLog {
+  id: string;
+  email: string;
+  action: "approved" | "denied";
+  timestamp: string;
+  adminName: string;
 }

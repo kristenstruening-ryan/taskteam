@@ -2,6 +2,9 @@ import { Request } from "express";
 
 export interface AuthRequest extends Request {
   userId?: string;
+  userRole?: string;
+  userEmail?: string;
+  userName?: string;
 }
 
 export interface User {
@@ -22,4 +25,3 @@ export interface Task {
   columnId: string;
   userId: string;
 }
-

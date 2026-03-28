@@ -3,7 +3,11 @@ import { notifications, users, comments } from "../db/schema";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 
 export class NotificationService {
-  static async createMentionNotifications(mentionEmails: string[], senderId: string, commentId: string) {
+  static async createMentionNotifications(
+    mentionEmails: string[],
+    senderId: string,
+    commentId: string,
+  ) {
     if (mentionEmails.length === 0) return;
 
     const recipients = await db
@@ -30,7 +34,12 @@ export class NotificationService {
     const [result] = await db
       .select({ value: count() })
       .from(notifications)
-      .where(and(eq(notifications.recipientId, userId), eq(notifications.isRead, false)));
+      .where(
+        and(
+          eq(notifications.recipientId, userId),
+          eq(notifications.isRead, false),
+        ),
+      );
     return Number(result.value);
   }
 
@@ -56,6 +65,30 @@ export class NotificationService {
     return await db
       .update(notifications)
       .set({ isRead: true })
-      .where(and(eq(notifications.id, notificationId), eq(notifications.recipientId, userId)));
+      .where(
+        and(
+          eq(notifications.id, notificationId),
+          eq(notifications.recipientId, userId),
+        ),
+      );
+  }
+
+  static async notifyAdminsOfRequest(request: any, requesterName: string) {
+    const admins = await db
+      .select()
+      .from(users)
+      .where(eq(users.systemRole, "admin"));
+
+    const notificationData = admins.map((admin) => ({
+      recipientId: admin.id,
+      senderId: request.requesterId,
+      type: "access_request",
+      requestId: request.id,
+      content: `${requesterName} requested platform access for ${request.targetEmail}`,
+    }));
+
+    if (notificationData.length > 0) {
+      await db.insert(notifications).values(notificationData);
+    }
   }
 }
