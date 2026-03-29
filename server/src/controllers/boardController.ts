@@ -2,6 +2,7 @@ import { Response, Request } from "express";
 import { AuthRequest } from "../types";
 import { BoardService } from "../services/boardService";
 import { catchAsync } from "../utils/catchAsync";
+import { S3Service } from "../services/s3Service";
 
 export const getBoardData = catchAsync(
   async (req: AuthRequest, res: Response) => {
@@ -16,8 +17,27 @@ export const getBoardData = catchAsync(
     if (!isMember) {
       return res.status(403).json({ error: "Access denied" });
     }
+    const tasksWithSignedUrls = await Promise.all(
+      board.tasks.map(async (task: any) => {
+        if (!task.attachments) return task;
 
-    res.json(board);
+        const signedAttachments = await Promise.all(
+          task.attachments.map(async (att: any) => {
+            if (att.storageKey) {
+              const signedUrl = await S3Service.getDownloadUrl(att.storageKey);
+              return { ...att, fileUrl: signedUrl };
+            }
+            return att;
+          }),
+        );
+
+        return { ...task, attachments: signedAttachments };
+      }),
+    );
+    res.json({
+      ...board,
+      tasks: tasksWithSignedUrls,
+    });
   },
 );
 

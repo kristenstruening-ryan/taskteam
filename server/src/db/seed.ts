@@ -8,16 +8,18 @@ import {
   boardMembers,
   boardInvites,
   platformAccessRequests,
-  auditLogs, // 1. Import the new table
+  auditLogs,
+  attachments,
 } from "./schema";
 import bcrypt from "bcrypt";
 
 async function seed() {
   console.log("🌱 Starting Comprehensive Seed...");
 
-  // 2. Clear existing data (added auditLogs to the top of the delete chain)
+  // 1. Clear existing data
   await db.delete(notifications);
-  await db.delete(auditLogs); // Clear logs
+  await db.delete(attachments);
+  await db.delete(auditLogs);
   await db.delete(platformAccessRequests);
   await db.delete(boardInvites);
   await db.delete(comments);
@@ -28,99 +30,110 @@ async function seed() {
 
   const hashedPassword = await bcrypt.hash("password123", 10);
 
-  // 3. Create Users
+  // 2. Create the 3 Demo Users
   const [admin] = await db.insert(users).values({
     name: "System Admin",
     email: "admin@taskteam.com",
     password: hashedPassword,
-    systemRole: "admin",
+    systemRole: "admin", // Controls platform-wide access
   }).returning();
 
-  const [kristen] = await db.insert(users).values({
-    name: "Kristen S.",
-    email: "kristen@example.com",
+  const [owner] = await db.insert(users).values({
+    name: "Project Owner",
+    email: "owner@example.com",
     password: hashedPassword,
     systemRole: "user",
   }).returning();
 
-  const [lead] = await db.insert(users).values({
-    name: "Project Lead",
-    email: "owner@guest.com",
+  const [member] = await db.insert(users).values({
+    name: "Team Member",
+    email: "member@example.com",
     password: hashedPassword,
     systemRole: "user",
   }).returning();
 
-  // 4. Create Board
+  // 3. Create Board (Owned by the 'owner' user)
   const [board] = await db.insert(boards).values({
     title: "Q1 Product Launch",
-    userId: lead.id,
+    userId: owner.id,
   }).returning();
 
-  // 5. Add Members
+  // 4. Add Board Memberships
   await db.insert(boardMembers).values([
-    { boardId: board.id, userId: lead.id, role: "owner" },
-    { boardId: board.id, userId: kristen.id, role: "member" },
-    { boardId: board.id, userId: admin.id, role: "member" },
+    { boardId: board.id, userId: owner.id, role: "owner" },
+    { boardId: board.id, userId: member.id, role: "member" },
+    { boardId: board.id, userId: admin.id, role: "admin" },
   ]);
 
-  // 6. Create Tasks
-  const [task2] = await db.insert(tasks).values({
+  // 5. Create Task (Assigned to the member)
+  const [task] = await db.insert(tasks).values({
     content: "API Authentication Refactor",
     description: "Move to the new modular Drizzle driver system.",
     columnId: "in-progress",
     boardId: board.id,
-    userId: kristen.id,
-    assignedTo: kristen.id,
+    userId: owner.id,
+    assignedTo: member.id, // Assigned to our member demo user
     order: 0,
   }).returning();
 
-  // 7. Create Comments
-  await db.insert(comments).values([
-    {
-      content: "Refactoring the schema to use Drizzle instead of Prisma!",
-      taskId: task2.id,
-      userId: kristen.id,
-      boardId: board.id,
-    }
-  ]);
-
-  // 8. Access Requests
-  const [request] = await db.insert(platformAccessRequests).values({
+  // 6. Create Comment (From the member)
+  const [comment] = await db.insert(comments).values({
+    content: "I've uploaded the new schema diagram here.",
+    taskId: task.id,
+    userId: member.id,
     boardId: board.id,
-    requesterId: lead.id,
-    targetEmail: "new-hire@company.com",
-    status: "pending",
   }).returning();
 
-  // 9. NEW: Add some historical Audit Logs
-  await db.insert(auditLogs).values([
+  // 7. CREATE ATTACHMENTS
+  await db.insert(attachments).values([
     {
-      email: "previous-intern@company.com",
-      action: "denied",
-      adminName: "System Admin",
-      timestamp: new Date(Date.now() - 86400000), // 1 day ago
+      fileName: "Project_Requirements.pdf",
+      fileUrl: "https://example.com/project_reqs.pdf",
+      storageKey: "seed/project_reqs.pdf",
+      fileType: "application/pdf",
+      fileSize: 102400,
+      boardId: board.id,
+      userId: owner.id,
     },
     {
-      email: "senior-dev@company.com",
-      action: "approved",
-      adminName: "System Admin",
-      timestamp: new Date(Date.now() - 43200000), // 12 hours ago
+      fileName: "auth-flow.png",
+      fileUrl: "https://example.com/auth-flow.png",
+      storageKey: "seed/auth-flow.png",
+      fileType: "image/png",
+      fileSize: 204800,
+      boardId: board.id,
+      taskId: task.id,
+      userId: member.id,
+    },
+    {
+      fileName: "schema-v2.sql",
+      fileUrl: "https://example.com/schema-v2.sql",
+      storageKey: "seed/schema-v2.sql",
+      fileType: "text/plain",
+      fileSize: 5000,
+      boardId: board.id,
+      taskId: task.id,
+      commentId: comment.id,
+      userId: member.id,
     }
   ]);
 
-  await db.insert(notifications).values({
-    recipientId: admin.id,
-    senderId: lead.id,
-    requestId: request.id,
-    type: "access_request",
-    content: `Project Lead requested platform access for new-hire@company.com`,
+  // 8. Historical Audit Log (For Admin testing)
+  await db.insert(auditLogs).values({
+    email: "former-employee@company.com",
+    action: "denied",
+    adminName: "System Admin",
+    timestamp: new Date(),
   });
 
   console.log(`
 ✅ Seed Complete!
 🚀 Board Created: "Q1 Product Launch"
-🔑 Admin: admin@taskteam.com / password123
-📜 Audit Logs Generated: 2
+
+Available Logins (Password: password123):
+👑 Admin:  admin@taskteam.com
+🏠 Owner:  owner@example.com
+🛠️ Member: member@example.com
   `);
   process.exit(0);
 }

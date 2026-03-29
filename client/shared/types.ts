@@ -24,6 +24,7 @@ export interface Task {
   description?: string | null;
   boardId: string;
   assignedUser?: User | string;
+  attachments?: Attachment[] | null;
   comments: Comment[];
   columnId: string;
   order: number;
@@ -118,4 +119,30 @@ export interface ActivityLog {
   action: "approved" | "denied";
   timestamp: string;
   adminName: string;
+}
+
+export interface Attachment {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: string;
+  createdAt: string;
+}
+
+export interface AttachmentModalProps {
+  onClose: () => void;
+  context: { type: "task" | "board" | "chat"; id: string };
+  onSuccess: (attachment: Attachment) => void;
+}
+
+export interface AttachmentGalleryProps {
+  attachments: Attachment[];
+  onDelete: (id: string) => void;
+}
+
+export interface BoardChatSidebarProps {
+  boardId: string;
+  currentUser: User | null;
+  onClose: () => void;
 }

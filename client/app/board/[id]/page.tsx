@@ -16,6 +16,7 @@ import DeleteModal from "@/components/DeleteModal";
 import MemberSidebar from "@/components/MemberSidebar";
 import BoardChatSidebar from "@/components/BoardChatSidebar";
 import axios from "axios";
+import { Paperclip } from "lucide-react";
 
 const COLUMNS = ["todo", "in-progress", "done"];
 
@@ -435,6 +436,16 @@ export default function BoardDetail() {
                                       <span>💬</span>
                                       {task.comments?.length || 0}
                                     </div>
+                                    {task.attachments &&
+                                      task.attachments.length > 0 && (
+                                        <div className="flex items-center gap-1 text-slate-400 text-[10px] font-bold">
+                                          <Paperclip
+                                            size={10}
+                                            className="rotate-45"
+                                          />
+                                          {task.attachments.length}
+                                        </div>
+                                      )}
                                     <div className="w-6 h-6 rounded-full bg-blue-50 text-blue-600 text-[9px] flex items-center justify-center font-black border border-blue-100 shrink-0 uppercase">
                                       {getInitial(task.assignedUser)}
                                     </div>

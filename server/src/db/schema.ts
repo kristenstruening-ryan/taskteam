@@ -130,14 +130,19 @@ export const platformAccessRequests = pgTable("platform_access_requests", {
 
 export const attachments = pgTable("attachments", {
   id: uuid("id").primaryKey().defaultRandom(),
-  taskId: uuid("task_id")
-    .references(() => tasks.id, { onDelete: "cascade" })
-    .notNull(),
+  taskId: uuid("task_id").references(() => tasks.id, { onDelete: "cascade" }),
+  boardId: uuid("board_id").references(() => boards.id, {
+    onDelete: "cascade",
+  }),
+  commentId: uuid("comment_id").references(() => comments.id, {
+    onDelete: "cascade",
+  }),
   userId: uuid("user_id")
     .references(() => users.id)
     .notNull(),
   fileName: text("file_name").notNull(),
   fileUrl: text("file_url").notNull(),
+  storageKey: text("storage_key"),
   fileType: text("file_type"),
   fileSize: integer("file_size"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -160,6 +165,7 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
 export const boardsRelations = relations(boards, ({ many, one }) => ({
   tasks: many(tasks),
   members: many(boardMembers),
+  attachments: many(attachments),
   owner: one(users, {
     fields: [boards.userId],
     references: [users.id],
@@ -196,17 +202,22 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   attachments: many(attachments),
 }));
 
-export const commentsRelations = relations(comments, ({ one }) => ({
+export const commentsRelations = relations(comments, ({ one, many }) => ({
+  board: one(boards, { fields: [comments.boardId], references: [boards.id] }),
+  task: one(tasks, { fields: [comments.taskId], references: [tasks.id] }),
+  user: one(users, { fields: [comments.userId], references: [users.id] }),
+  attachments: many(attachments),
+}));
+
+export const attachmentsRelations = relations(attachments, ({ one }) => ({
+  task: one(tasks, { fields: [attachments.taskId], references: [tasks.id] }),
   board: one(boards, {
-    fields: [comments.boardId],
+    fields: [attachments.boardId],
     references: [boards.id],
   }),
-  task: one(tasks, {
-    fields: [comments.taskId],
-    references: [tasks.id],
+  comment: one(comments, {
+    fields: [attachments.commentId],
+    references: [comments.id],
   }),
-  user: one(users, {
-    fields: [comments.userId],
-    references: [users.id],
-  }),
+  user: one(users, { fields: [attachments.userId], references: [users.id] }),
 }));

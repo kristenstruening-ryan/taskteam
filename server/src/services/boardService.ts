@@ -13,6 +13,7 @@ export const BoardService = {
               with: { user: { columns: { name: true, email: true } } },
             },
             assignedUser: true,
+            attachments: true,
           },
         },
         members: {

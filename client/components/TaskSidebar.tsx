@@ -4,6 +4,9 @@ import { useState } from "react";
 import api from "@/lib/api";
 import type { TaskSidebarProps } from "@/shared/types";
 import CommentList from "./CommentList";
+import { Paperclip } from "lucide-react";
+import AttachmentGallery from "./AttachmentGallery";
+import AttachmentModal from "./AttachmentModal";
 
 export default function TaskSidebar({
   task,
@@ -14,6 +17,8 @@ export default function TaskSidebar({
   members = [],
 }: TaskSidebarProps) {
   const [description, setDescription] = useState(task.description || "");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [attachments, setAttachments] = useState(task.attachments || []);
   const [dueDate, setDueDate] = useState(task.dueDate || "");
   const [assignedTo, setAssignedTo] = useState<string>(
     typeof task.assignedUser === "string"
@@ -104,7 +109,36 @@ export default function TaskSidebar({
             className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-sm font-bold text-slate-700 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all cursor-pointer"
           />
         </section>
+        <section>
+          <div className="flex justify-between items-center mb-3">
+            <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em]">
+              Attachments
+            </label>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="p-1.5 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors flex items-center gap-1 text-[10px] font-black uppercase"
+            >
+              <Paperclip size={12} /> Add
+            </button>
+          </div>
 
+          <AttachmentGallery
+            attachments={attachments}
+            onDelete={(id) =>
+              setAttachments((prev) => prev.filter((a) => a.id !== id))
+            }
+          />
+
+          {isModalOpen && (
+            <AttachmentModal
+              context={{ type: "task", id: task.id }}
+              onClose={() => setIsModalOpen(false)}
+              onSuccess={(newAtt) =>
+                setAttachments((prev) => [...prev, newAtt])
+              }
+            />
+          )}
+        </section>
         <section>
           <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-3 block">
             Description
