@@ -5,6 +5,7 @@ import {
   getTasks,
   deleteTask,
   updateTask,
+  assignTask,
 } from "../controllers/taskController";
 import { authenticate } from "../middleware/authMiddleware";
 
@@ -14,6 +15,7 @@ router.get("/", authenticate, getTasks);
 router.post("/", authenticate, createTask);
 router.post("/move", authenticate, updateTaskPosition);
 router.patch("/:id", authenticate, updateTask);
+router.patch("/:id/assign", authenticate, assignTask);
 router.delete("/:id", authenticate, deleteTask);
 
 export default router;

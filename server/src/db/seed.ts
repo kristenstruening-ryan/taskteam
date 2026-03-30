@@ -3,6 +3,7 @@ import {
   users,
   boards,
   tasks,
+  phases,
   comments,
   notifications,
   boardMembers,
@@ -10,13 +11,14 @@ import {
   platformAccessRequests,
   auditLogs,
   attachments,
+  meetings,
 } from "./schema";
 import bcrypt from "bcrypt";
 
 async function seed() {
-  console.log("🌱 Starting Comprehensive Seed...");
+  console.log("🌱 Starting Comprehensive Seed v3 (Phases & Velocity)...");
 
-  // 1. Clear existing data
+  // 1. Clear existing data - Cascading order is vital
   await db.delete(notifications);
   await db.delete(attachments);
   await db.delete(auditLogs);
@@ -24,6 +26,8 @@ async function seed() {
   await db.delete(boardInvites);
   await db.delete(comments);
   await db.delete(tasks);
+  await db.delete(meetings);
+  await db.delete(phases);
   await db.delete(boardMembers);
   await db.delete(boards);
   await db.delete(users);
@@ -35,7 +39,7 @@ async function seed() {
     name: "System Admin",
     email: "admin@taskteam.com",
     password: hashedPassword,
-    systemRole: "admin", // Controls platform-wide access
+    systemRole: "admin",
   }).returning();
 
   const [owner] = await db.insert(users).values({
@@ -52,47 +56,120 @@ async function seed() {
     systemRole: "user",
   }).returning();
 
-  // 3. Create Board (Owned by the 'owner' user)
+  // 3. Create Board
   const [board] = await db.insert(boards).values({
     title: "Q1 Product Launch",
     userId: owner.id,
   }).returning();
 
-  // 4. Add Board Memberships
+  // 4. Create Phases (The roadmap for Project Pulse)
+  const [phase1] = await db.insert(phases).values({
+    title: "Phase 01: Core Infrastructure",
+    boardId: board.id,
+    status: "active",
+    order: 1,
+  }).returning();
+
+  const [phase2] = await db.insert(phases).values({
+    title: "Phase 02: UI Deployment",
+    boardId: board.id,
+    status: "pending",
+    order: 2,
+  }).returning();
+
+  // 5. Add Board Memberships
   await db.insert(boardMembers).values([
     { boardId: board.id, userId: owner.id, role: "owner" },
     { boardId: board.id, userId: member.id, role: "member" },
     { boardId: board.id, userId: admin.id, role: "admin" },
   ]);
 
-  // 5. Create Task (Assigned to the member)
-  const [task] = await db.insert(tasks).values({
-    content: "API Authentication Refactor",
-    description: "Move to the new modular Drizzle driver system.",
-    columnId: "in-progress",
+  // 6. Create Tasks (Setting up the 75% Progress Ratio)
+  const taskData = [
+    {
+      content: "Database Schema Migrations",
+      columnId: "done", // Completed
+      boardId: board.id,
+      userId: owner.id,
+      phaseId: phase1.id,
+      order: 1,
+    },
+    {
+      content: "API Authentication Refactor",
+      description: "Move to the new modular Drizzle driver system.",
+      columnId: "done", // Completed
+      boardId: board.id,
+      userId: owner.id,
+      assignedTo: member.id,
+      phaseId: phase1.id,
+      order: 2,
+    },
+    {
+      content: "WebSocket Gateway Integration",
+      columnId: "done", // Completed
+      boardId: board.id,
+      userId: owner.id,
+      phaseId: phase1.id,
+      order: 3,
+    },
+    {
+      content: "Frontend Dashboard Layout",
+      columnId: "in-progress", // Not done -> Result: 3/4 = 75%
+      boardId: board.id,
+      userId: owner.id,
+      phaseId: phase1.id,
+      order: 4,
+    }
+  ];
+
+  const seededTasks = await db.insert(tasks).values(taskData).returning();
+  const mainTask = seededTasks[1]; // Use the "Auth Refactor" task for comments
+
+  // 7. Create a Meeting
+  const [meeting] = await db.insert(meetings).values({
+    title: "Project Kickoff Sync",
+    description: "Discussing the Q1 roadmap and resourcing.",
+    startTime: new Date(Date.now() + 1000 * 60 * 60 * 24),
+    meetingLink: "https://meet.google.com/abc-defg-hij",
     boardId: board.id,
-    userId: owner.id,
-    assignedTo: member.id, // Assigned to our member demo user
-    order: 0,
+    createdById: owner.id,
   }).returning();
 
-  // 6. Create Comment (From the member)
-  const [comment] = await db.insert(comments).values({
-    content: "I've uploaded the new schema diagram here.",
-    taskId: task.id,
-    userId: member.id,
-    boardId: board.id,
-  }).returning();
+  // 8. Create Comments
+  await db.insert(comments).values([
+    {
+      content: "I've uploaded the new schema diagram here.",
+      taskId: mainTask.id,
+      userId: member.id,
+      boardId: board.id,
+      visibility: "public",
+    },
+    {
+      content: "Hey Owner, I'm a bit stuck on the JWT middleware, can we chat privately?",
+      userId: member.id,
+      boardId: board.id,
+      visibility: "private",
+      recipientId: owner.id,
+    },
+    {
+      content: "I'll be 5 minutes late to the kickoff!",
+      meetingId: meeting.id,
+      userId: member.id,
+      boardId: board.id,
+      visibility: "public",
+    }
+  ]);
 
-  // 7. CREATE ATTACHMENTS
+  // 9. Create Attachments
   await db.insert(attachments).values([
     {
-      fileName: "Project_Requirements.pdf",
-      fileUrl: "https://example.com/project_reqs.pdf",
-      storageKey: "seed/project_reqs.pdf",
-      fileType: "application/pdf",
-      fileSize: 102400,
+      fileName: "Meeting_Agenda.docx",
+      fileUrl: "https://example.com/agenda.docx",
+      storageKey: "seed/agenda.docx",
+      fileType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      fileSize: 45000,
       boardId: board.id,
+      meetingId: meeting.id,
       userId: owner.id,
     },
     {
@@ -102,23 +179,12 @@ async function seed() {
       fileType: "image/png",
       fileSize: 204800,
       boardId: board.id,
-      taskId: task.id,
-      userId: member.id,
-    },
-    {
-      fileName: "schema-v2.sql",
-      fileUrl: "https://example.com/schema-v2.sql",
-      storageKey: "seed/schema-v2.sql",
-      fileType: "text/plain",
-      fileSize: 5000,
-      boardId: board.id,
-      taskId: task.id,
-      commentId: comment.id,
+      taskId: mainTask.id,
       userId: member.id,
     }
   ]);
 
-  // 8. Historical Audit Log (For Admin testing)
+  // 10. Audit Log
   await db.insert(auditLogs).values({
     email: "former-employee@company.com",
     action: "denied",
@@ -127,8 +193,11 @@ async function seed() {
   });
 
   console.log(`
-✅ Seed Complete!
+✅ Seed Complete v3!
 🚀 Board Created: "Q1 Product Launch"
+🏗️ Phase 01 Active: 75% Velocity (3/4 Tasks Complete)
+📅 Meeting Created: "Project Kickoff Sync"
+🔒 Private Messaging initialized.
 
 Available Logins (Password: password123):
 👑 Admin:  admin@taskteam.com

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { authenticate } from "./authMiddleware";
 import { AuthService } from "../services/authService";
-import { AuthRequest } from "../types";
+import { AuthRequest } from "../shared/types";
 import { Response } from "express";
 
 describe("Auth Middleware", () => {
@@ -28,8 +28,8 @@ describe("Auth Middleware", () => {
     const token = "valid-token";
     const userId = "user-123";
     const systemRole = "admin";
-    const email = 'test@example.com'
-    const name = 'Guest User';
+    const email = "test@example.com";
+    const name = "Guest User";
 
     const verifySpy = vi
       .spyOn(AuthService, "verifyToken")

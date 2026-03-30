@@ -3,7 +3,7 @@ import { S3Service } from "../services/s3Service";
 import { db } from "../db";
 import { attachments } from "../db/schema";
 import { eq } from "drizzle-orm";
-import { AuthRequest } from "../types";
+import { AuthRequest } from "../shared/types";
 import { catchAsync } from "../utils/catchAsync";
 import { signAttachmentUrls } from "../middleware/attachmentMiddleware";
 
@@ -26,6 +26,7 @@ export const saveAttachment = catchAsync(
       boardId,
       taskId,
       commentId,
+      meetingId,
       fileName,
       fileUrl,
       fileType,
@@ -39,6 +40,7 @@ export const saveAttachment = catchAsync(
         boardId,
         taskId,
         commentId,
+        meetingId,
         userId: req.userId!,
         fileName,
         fileUrl,
@@ -59,10 +61,7 @@ export const getBoardAttachments = catchAsync(
       .select()
       .from(attachments)
       .where(eq(attachments.boardId, boardId));
-
-    // Clean and reusable!
-    const securedResults = await signAttachmentUrls(results);
-    res.json(securedResults);
+    res.json(await signAttachmentUrls(results));
   },
 );
 
@@ -73,9 +72,18 @@ export const getTaskAttachments = catchAsync(
       .select()
       .from(attachments)
       .where(eq(attachments.taskId, taskId));
+    res.json(await signAttachmentUrls(results));
+  },
+);
 
-    const securedResults = await signAttachmentUrls(results);
-    res.json(securedResults);
+export const getMeetingAttachments = catchAsync(
+  async (req: AuthRequest, res: Response) => {
+    const { meetingId } = req.params;
+    const results = await db
+      .select()
+      .from(attachments)
+      .where(eq(attachments.meetingId, meetingId));
+    res.json(await signAttachmentUrls(results));
   },
 );
 
@@ -97,7 +105,6 @@ export const deleteAttachment = catchAsync(
     }
 
     await db.delete(attachments).where(eq(attachments.id, id));
-
     res.status(204).send();
   },
 );

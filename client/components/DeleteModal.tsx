@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { AlertTriangle, ShieldAlert, X, Loader2 } from "lucide-react";
 import type { DeleteModalProps } from "@/shared/types";
 
 export default function DeleteModal({
@@ -22,81 +23,123 @@ export default function DeleteModal({
     onClose();
   };
 
+  const isDanger = variant === "danger";
   const isConfirmDisabled = !!(
     loading ||
     (requireConfirmationText && userInput !== requireConfirmationText)
   );
 
+  const handleSubmit = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    if (!isConfirmDisabled) {
+      onConfirm();
+      setUserInput("");
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-999 flex items-center justify-center p-6 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-999 flex items-center justify-center p-6 bg-[#020617]/90 backdrop-blur-2xl animate-in fade-in duration-300">
       <div className="absolute inset-0" onClick={handleClose} />
 
-      <div className="relative bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-[0_32px_64px_-15px_rgba(0,0,0,0.3)] animate-in zoom-in-95 duration-300 border border-slate-100">
+      <form
+        onSubmit={handleSubmit}
+        className="relative bg-[#1e293b] rounded-[3.5rem] p-12 w-full max-w-lg shadow-[0_32px_80px_-15px_rgba(0,0,0,0.6)] animate-in zoom-in-95 duration-300 border border-slate-800 overflow-hidden"
+      >
         <div
-          className={`w-16 h-16 rounded-3xl flex items-center justify-center text-2xl mb-6 shadow-sm ${
-            variant === "danger"
-              ? "bg-red-50 text-red-500"
-              : "bg-orange-50 text-orange-500"
-          }`}
-        >
-          {variant === "danger" ? "🚨" : "⚠️"}
-        </div>
+          className={`absolute -top-24 -left-24 w-48 h-48 blur-[100px] pointer-events-none ${isDanger ? "bg-red-500/10" : "bg-orange-500/10"}`}
+        />
 
-        <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-          {variant === "danger" ? "Critical Action" : "Are you sure?"}
-        </h3>
-
-        <p className="text-slate-500 mt-4 leading-relaxed font-medium">
-          {description || `You are about to permanently delete:`}
-          <span className="block text-slate-900 font-bold mt-1 text-lg">
-            &quot;{title}&quot;
-          </span>
-        </p>
-
-        {requireConfirmationText && (
-          <div className="mt-8">
-            <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2 block px-1">
-              Type{" "}
-              <span className="text-slate-900 underline">
-                {requireConfirmationText}
-              </span>{" "}
-              to confirm
-            </label>
-            <input
-              autoFocus
-              type="text"
-              value={userInput}
-              onChange={(e) => setUserInput(e.target.value)}
-              placeholder={requireConfirmationText}
-              className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl text-sm text-slate-900 placeholder:text-slate-300 outline-none focus:ring-4 focus:ring-red-500/10 focus:border-red-500 transition-all font-black text-center tracking-widest uppercase"
-            />
+        <div className="relative z-10">
+          <div className="flex justify-between items-start mb-10">
+            <div
+              className={`w-20 h-20 rounded-4xl flex items-center justify-center shadow-2xl border-2 transition-all duration-500 ${
+                isDanger
+                  ? "bg-red-500/10 text-red-500 border-red-500/20 shadow-red-500/10"
+                  : "bg-orange-500/10 text-orange-500 border-orange-500/20 shadow-orange-500/10"
+              }`}
+            >
+              {isDanger ? (
+                <ShieldAlert size={36} strokeWidth={2.5} />
+              ) : (
+                <AlertTriangle size={36} strokeWidth={2.5} />
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="w-12 h-12 flex items-center justify-center bg-slate-900/50 hover:bg-slate-800 rounded-2xl transition-all text-slate-500 border border-slate-800"
+            >
+              <X size={20} strokeWidth={3} />
+            </button>
           </div>
-        )}
 
-        <div className="flex flex-col sm:flex-row gap-4 mt-10">
-          <button
-            type="button"
-            disabled={loading}
-            onClick={handleClose}
-            className="flex-1 order-2 sm:order-1 px-6 py-4 text-sm font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-2xl transition-all"
-          >
-            Cancel
-          </button>
+          <h3 className="text-4xl font-black text-white tracking-tighter mb-4">
+            {isDanger ? "Critical Action" : "Are you sure?"}
+          </h3>
 
-          <button
-            type="button"
-            disabled={isConfirmDisabled}
-            onClick={onConfirm}
-            className={`flex-[1.5] order-1 sm:order-2 px-6 py-4 text-sm font-black uppercase tracking-widest text-white rounded-2xl shadow-xl transition-all active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed ${
-              variant === "danger"
-                ? "bg-red-600 hover:bg-red-700 shadow-red-500/30"
-                : "bg-orange-500 hover:bg-orange-600 shadow-orange-500/30"
-            }`}
-          >
-            {loading ? "Processing..." : confirmText}
-          </button>
+          <div className="space-y-2 mb-10">
+            <p className="text-slate-500 text-[13px] font-bold leading-relaxed">
+              {description || `You are about to permanently delete:`}
+            </p>
+            <div className="px-4 py-2 bg-[#0f172a] border border-slate-800 rounded-xl inline-block max-w-full">
+              <span className="text-indigo-400 font-black text-lg tracking-tight antialiased truncate block">
+                &quot;{title}&quot;
+              </span>
+            </div>
+          </div>
+
+          {requireConfirmationText && (
+            <div className="mb-10 p-6 bg-[#0f172a]/50 border border-slate-800/50 rounded-4xl">
+              <label className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] mb-4 block px-1 text-center">
+                Type{" "}
+                <span className="text-white underline decoration-red-500 decoration-2 underline-offset-4 font-mono">
+                  {requireConfirmationText}
+                </span>{" "}
+                to authorize
+              </label>
+              <input
+                autoFocus
+                type="text"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                autoComplete="off"
+                placeholder="Verify identity..."
+                className="w-full bg-[#0f172a] border-2 border-slate-800 p-6 rounded-2xl text-white placeholder:text-slate-700 outline-none focus:border-red-500/50 focus:ring-8 focus:ring-red-500/5 transition-all font-black text-center tracking-[0.2em] uppercase text-sm"
+              />
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              type="button"
+              disabled={loading}
+              onClick={onClose}
+              className="flex-1 order-2 sm:order-1 px-8 py-5 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white hover:bg-slate-800 rounded-4xl border border-transparent hover:border-slate-700 transition-all"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              disabled={isConfirmDisabled}
+              className={`flex-[1.8] order-1 sm:order-2 px-8 py-5 text-[11px] font-black uppercase tracking-[0.2em] text-white rounded-4xl shadow-2xl transition-all active:scale-95 disabled:opacity-20 disabled:grayscale disabled:cursor-not-allowed ${
+                isDanger
+                  ? "bg-red-600 hover:bg-red-500 shadow-red-500/25"
+                  : "bg-orange-500 hover:bg-orange-400 shadow-orange-500/25"
+              }`}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <Loader2 className="animate-spin" size={16} />
+                  <span>Purging...</span>
+                </div>
+              ) : (
+                confirmText
+              )}
+            </button>
+          </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }

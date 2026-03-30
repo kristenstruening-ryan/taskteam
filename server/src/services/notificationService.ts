@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { notifications, users, comments } from "../db/schema";
+import { notifications, users, comments, boardMembers } from "../db/schema";
 import { and, count, desc, eq, inArray } from "drizzle-orm";
 
 export class NotificationService {
@@ -73,6 +73,19 @@ export class NotificationService {
       );
   }
 
+  static async markAllRead(userId: string, boardId?: string) {
+    const conditions = [eq(notifications.recipientId, userId)];
+
+    if (boardId) {
+      conditions.push(eq(notifications.boardId, boardId));
+    }
+
+    return await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(and(...conditions));
+  }
+
   static async notifyAdminsOfRequest(request: any, requesterName: string) {
     const admins = await db
       .select()
@@ -86,6 +99,27 @@ export class NotificationService {
       requestId: request.id,
       content: `${requesterName} requested platform access for ${request.targetEmail}`,
     }));
+
+    if (notificationData.length > 0) {
+      await db.insert(notifications).values(notificationData);
+    }
+  }
+  static async createMeetingNotifications(meeting: any, senderId: string) {
+    const members = await db.query.boardMembers.findMany({
+      where: eq(boardMembers.boardId, meeting.boardId),
+    });
+
+    const notificationData = members
+      .filter((m) => m.userId !== senderId)
+      .map((m) => ({
+        recipientId: m.userId,
+        senderId,
+        meetingId: meeting.id,
+        boardId: meeting.boardId,
+        type: "meeting_scheduled",
+        content: `New meeting: ${meeting.title}`,
+        isRead: false,
+      }));
 
     if (notificationData.length > 0) {
       await db.insert(notifications).values(notificationData);

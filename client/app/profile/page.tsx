@@ -7,6 +7,15 @@ import Toast from "@/components/Toast";
 import DeleteModal from "@/components/DeleteModal";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import {
+  ChevronLeft,
+  User,
+  Shield,
+  Lock,
+  AlertTriangle,
+  Loader2,
+  Save,
+} from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -16,7 +25,10 @@ export default function ProfilePage() {
   const [initialName, setInitialName] = useState("");
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -34,8 +46,8 @@ export default function ProfilePage() {
         setEmail(res.data.email || "");
         setInitialName(res.data.name || "");
       } catch (error) {
-        setToast({ message: "Failed to load profile.", type: "error" });
         console.error(error);
+        setToast({ message: "Failed to load profile.", type: "error" });
       } finally {
         setFetching(false);
       }
@@ -55,7 +67,8 @@ export default function ProfilePage() {
       setToast({ message: "Profile updated!", type: "success" });
     } catch (error: unknown) {
       let errorMsg = "Update failed.";
-      if (axios.isAxiosError(error)) errorMsg = error.response?.data?.message || errorMsg;
+      if (axios.isAxiosError(error))
+        errorMsg = error.response?.data?.message || errorMsg;
       setToast({ message: errorMsg, type: "error" });
     } finally {
       setLoading(false);
@@ -71,13 +84,14 @@ export default function ProfilePage() {
     setPassLoading(true);
     try {
       await api.patch("/user/password", { currentPassword, newPassword });
-      setToast({ message: "Password updated successfully!", type: "success" });
+      setToast({ message: "Security protocol updated!", type: "success" });
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (error: unknown) {
-      let errorMsg = "Password update failed.";
-      if (axios.isAxiosError(error)) errorMsg = error.response?.data?.message || errorMsg;
+      let errorMsg = "Security update failed.";
+      if (axios.isAxiosError(error))
+        errorMsg = error.response?.data?.message || errorMsg;
       setToast({ message: errorMsg, type: "error" });
     } finally {
       setPassLoading(false);
@@ -89,10 +103,11 @@ export default function ProfilePage() {
     try {
       await api.delete("/user/profile");
       localStorage.clear();
-      router.push("/register");
+      router.push("/signup");
     } catch (error: unknown) {
       let errorMsg = "Could not delete account.";
-      if (axios.isAxiosError(error)) errorMsg = error.response?.data?.message || errorMsg;
+      if (axios.isAxiosError(error))
+        errorMsg = error.response?.data?.message || errorMsg;
       setToast({ message: errorMsg, type: "error" });
       setIsDeleteModalOpen(false);
     } finally {
@@ -100,15 +115,22 @@ export default function ProfilePage() {
     }
   };
 
-  if (fetching) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
+  if (fetching)
+    return (
+      <div className="min-h-screen bg-[#0f172a] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-indigo-500 animate-spin" />
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20">
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+    <div className="min-h-screen bg-[#0f172a] text-slate-200 pb-32 selection:bg-indigo-500/30">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       <DeleteModal
         isOpen={isDeleteModalOpen}
@@ -122,63 +144,163 @@ export default function ProfilePage() {
         loading={deleteLoading}
       />
 
-      <div className="max-w-2xl mx-auto py-20 px-6">
-        <header className="mb-10">
-          <Link href="/dashboard" className="text-sm font-bold text-slate-400 hover:text-blue-600 transition-colors mb-4 block">← Back</Link>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Account Settings</h1>
-        </header>
+      <div className="max-w-3xl mx-auto py-24 px-8 relative">
+        {/* Atmospheric Glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[120px] pointer-events-none" />
 
-        <form onSubmit={handleUpdate} className="space-y-6 mb-16">
-          <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-            <div>
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2 block px-1">Email Address</label>
-              <input type="email" value={email} readOnly className="w-full bg-slate-50 border border-slate-100 p-4 rounded-2xl text-sm text-slate-400 cursor-not-allowed font-medium outline-none" />
+        <header className="mb-16">
+          <Link
+            href="/dashboard"
+            className="group inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-all mb-8"
+          >
+            <ChevronLeft
+              size={14}
+              className="group-hover:-translate-x-1 transition-transform"
+            />{" "}
+            Back to Terminal
+          </Link>
+          <div className="flex items-center gap-5">
+            <div className="w-16 h-16 rounded-3xl bg-indigo-600/10 border-2 border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <User size={32} strokeWidth={2.5} />
             </div>
             <div>
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2 block px-1">Display Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl text-sm text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-medium" />
+              <h1 className="text-5xl font-black text-white tracking-tighter antialiased">
+                Account Settings
+              </h1>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mt-2">
+                Personal Identity Configuration
+              </p>
             </div>
           </div>
-          <button type="submit" disabled={loading || name === initialName} className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-200 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-xl shadow-blue-500/20 active:scale-95">
-            {loading ? "Saving..." : "Update Profile"}
+        </header>
+
+        {/* Identity Section */}
+        <form onSubmit={handleUpdate} className="space-y-8 mb-24">
+          <div className="bg-[#1e293b] p-10 rounded-[3rem] border border-slate-800 shadow-2xl space-y-8">
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] ml-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                readOnly
+                className="w-full bg-[#0f172a]/50 border-2 border-slate-800 p-5 rounded-2xl text-sm text-slate-500 cursor-not-allowed font-bold outline-none shadow-inner"
+              />
+            </div>
+            <div className="space-y-3">
+              <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] ml-2">
+                Display Name
+              </label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full bg-[#0f172a] border-2 border-slate-800 p-5 rounded-2xl text-sm text-white outline-none focus:border-indigo-500/50 transition-all font-bold shadow-inner"
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading || name === initialName}
+            className="w-full bg-white text-[#0f172a] hover:bg-indigo-50 disabled:opacity-20 py-5 rounded-4xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3 group"
+          >
+            {loading ? (
+              <Loader2 className="animate-spin" size={18} />
+            ) : (
+              <>
+                <Save size={16} /> Save Changes
+              </>
+            )}
           </button>
         </form>
 
-        <div className="border-t border-slate-200 pt-16">
-          <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-2">Security</h2>
-          <p className="text-slate-500 mb-8 font-medium">Update your password to keep your account secure.</p>
-          <form onSubmit={handlePasswordChange} className="space-y-6">
-            <div className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm space-y-6">
-              <div>
-                <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2 block px-1">Current Password</label>
-                <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl text-sm text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-medium" />
+        {/* Security Section */}
+        <div className="pt-20 border-t border-slate-800/50">
+          <div className="flex items-center gap-4 mb-10">
+            <Shield className="text-indigo-400" size={24} strokeWidth={2.5} />
+            <div>
+              <h2 className="text-3xl font-black text-white tracking-tighter antialiased">
+                Security Protocol
+              </h2>
+              <p className="text-slate-500 text-xs font-bold mt-1">
+                Update your encryption keys to maintain access.
+              </p>
+            </div>
+          </div>
+
+          <form onSubmit={handlePasswordChange} className="space-y-8">
+            <div className="bg-[#1e293b] p-10 rounded-[3rem] border border-slate-800 shadow-2xl space-y-8">
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] ml-2">
+                  Current Password
+                </label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full bg-[#0f172a] border-2 border-slate-800 p-5 rounded-2xl text-sm text-white outline-none focus:border-indigo-500/50 transition-all font-bold shadow-inner"
+                />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2 block px-1">New Password</label>
-                  <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl text-sm text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-medium" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] ml-2">
+                    New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full bg-[#0f172a] border-2 border-slate-800 p-5 rounded-2xl text-sm text-white outline-none focus:border-indigo-500/50 transition-all font-bold shadow-inner"
+                  />
                 </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] mb-2 block px-1">Confirm New Password</label>
-                  <input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="w-full bg-white border border-slate-200 p-4 rounded-2xl text-sm text-slate-900 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all font-medium" />
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] ml-2">
+                    Confirm New Password
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-[#0f172a] border-2 border-slate-800 p-5 rounded-2xl text-sm text-white outline-none focus:border-indigo-500/50 transition-all font-bold shadow-inner"
+                  />
                 </div>
               </div>
             </div>
-            <button type="submit" disabled={passLoading || !currentPassword || !newPassword} className="w-full bg-slate-900 hover:bg-black disabled:bg-slate-200 text-white py-4 rounded-2xl font-black text-sm transition-all shadow-xl shadow-slate-900/10 active:scale-95">
-              {passLoading ? "Updating..." : "Change Password"}
+            <button
+              type="submit"
+              disabled={passLoading || !currentPassword || !newPassword}
+              className="w-full bg-slate-800 hover:bg-slate-700 disabled:opacity-20 text-white py-5 rounded-4xl font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-3 group"
+            >
+              {passLoading ? (
+                <Loader2 className="animate-spin" size={18} />
+              ) : (
+                <>
+                  <Lock size={16} /> Update Security
+                </>
+              )}
             </button>
           </form>
         </div>
 
-        <div className="mt-16 pt-16 border-t border-slate-200">
-          <div className="bg-red-50/50 border border-red-100 rounded-[2.5rem] p-10">
-            <h2 className="text-2xl font-black text-red-600 tracking-tight mb-2">Danger Zone</h2>
-            <p className="text-slate-500 mb-8 font-medium leading-relaxed">Once you delete your account, there is no going back. Please be certain.</p>
+        {/* Danger Zone */}
+        <div className="mt-24 pt-24 border-t border-slate-800/50">
+          <div className="bg-rose-500/5 border-2 border-rose-500/20 rounded-[3rem] p-12 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-8 text-rose-500/10 group-hover:text-rose-500/20 transition-colors">
+              <AlertTriangle size={120} strokeWidth={1} />
+            </div>
+            <h2 className="text-3xl font-black text-rose-500 tracking-tighter antialiased mb-2">
+              Danger Zone
+            </h2>
+            <p className="text-slate-500 mb-10 font-bold text-sm leading-relaxed max-w-lg">
+              Account termination is absolute. All data, team associations, and
+              mission logs will be wiped from the terminal.
+            </p>
             <button
               onClick={() => setIsDeleteModalOpen(true)}
-              className="bg-white border border-red-200 text-red-600 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-600 hover:text-white transition-all"
+              className="bg-rose-500 hover:bg-rose-600 text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all shadow-xl shadow-rose-500/20 active:scale-95"
             >
-              Delete My Account
+              Terminate Account
             </button>
           </div>
         </div>

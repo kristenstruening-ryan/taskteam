@@ -1,7 +1,7 @@
 import { Response, Request } from "express";
 import { InviteService } from "../services/inviteService";
 import { catchAsync } from "../utils/catchAsync";
-import { AuthRequest } from "../types";
+import { AuthRequest } from "../shared/types";
 
 export const createInvite = catchAsync(
   async (req: AuthRequest, res: Response) => {

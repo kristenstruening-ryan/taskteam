@@ -11,4 +11,19 @@ export class UserService {
       .returning({ id: users.id, email: users.email, name: users.name });
     return updatedUser;
   }
+
+  static async updateNotificationSettings(
+    userId: string,
+    settings: { emailNotifications: boolean; dailyDigest: boolean }
+  ) {
+    const [updated] = await db
+      .update(users)
+      .set(settings)
+      .where(eq(users.id, userId))
+      .returning({
+        emailNotifications: users.emailNotifications,
+        dailyDigest: users.dailyDigest
+      });
+    return updated;
+  }
 }

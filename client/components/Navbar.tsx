@@ -59,27 +59,26 @@ export default function Navbar() {
     : userEmail.charAt(0).toUpperCase() || "U";
 
   return (
-    <nav className="h-16 border-b border-slate-100 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-50">
+    <nav className="h-18 border-b border-slate-200 dark:border-slate-800 bg-background/80 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-50">
       <div className="flex items-center gap-8">
         <Link
-          href={isAuthPage ? "#" : "/dashboard"}
-          className="text-xl font-black text-blue-600 tracking-tighter hover:opacity-80 transition-opacity"
+          href="/dashboard"
+          className="text-2xl font-black text-accent tracking-tighter"
         >
           TaskTeam
         </Link>
       </div>
-
       {!isAuthPage && (
         <div className="flex items-center gap-4 animate-in fade-in duration-500">
           <NotificationBell />
           <div className="h-6 w-px bg-slate-200 mx-2" />
 
           <div className="group relative">
-            <button className="flex items-center gap-2 p-1 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-100">
-              <div className="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xs font-black shadow-lg shadow-blue-200 transition-transform group-hover:scale-105">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-2xl bg-accent flex items-center justify-center text-white text-xs font-black shadow-lg shadow-accent/20">
                 {initial}
               </div>
-            </button>
+            </div>
 
             <div className="absolute right-0 mt-3 w-64 bg-white border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-3xl py-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible translate-y-2 group-hover:translate-y-0 transition-all duration-300 z-50 overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-50 mb-2 bg-slate-50/50">

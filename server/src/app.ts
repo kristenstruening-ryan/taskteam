@@ -12,6 +12,7 @@ import rootRouter from "./routes";
 
 import { registerTaskHandlers } from "./sockets/taskHandler";
 import { AuthService } from "./services/authService";
+import { initCronJobs } from "./services/cronService";
 import { errorHandler } from "./middleware/errorMiddleware";
 
 export const app = express();
@@ -34,7 +35,7 @@ app.get("/health", async (req, res) => {
     res.status(500).json({ status: "error", database: "disconnected" });
   }
 });
-
+initCronJobs();
 app.use("/api", rootRouter);
 app.use(errorHandler);
 

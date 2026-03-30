@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { AuthService } from "../services/authService";
 import { db } from "../db";
 import { users } from "../db/schema";
-import type { AuthRequest } from "../types";
+import type { AuthRequest } from "../shared/types";
 import { catchAsync } from "../utils/catchAsync";
 
 export const signup = catchAsync(async (req: Request, res: Response) => {

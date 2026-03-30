@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { AuthRequest } from "../types";
+import { AuthRequest } from "../shared/types";
 import { CommentService } from "../services/commentService";
 import { NotificationService } from "../services/notificationService";
 import { extractMentions } from "../utils/mentionUtils";

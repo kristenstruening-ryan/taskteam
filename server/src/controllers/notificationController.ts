@@ -1,5 +1,5 @@
 import { Response } from "express";
-import { AuthRequest } from "../types";
+import { AuthRequest } from "../shared/types";
 import { NotificationService } from "../services/notificationService";
 import { catchAsync } from "../utils/catchAsync";
 
@@ -30,5 +30,20 @@ export const markAsRead = catchAsync(
     }
 
     res.json({ success: true });
+  },
+);
+
+export const markAllRead = catchAsync(
+  async (req: AuthRequest, res: Response) => {
+    const userId = req.userId;
+    const { boardId } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    await NotificationService.markAllRead(userId, boardId);
+
+    return res.status(200).json({ message: "Notifications cleared" });
   },
 );

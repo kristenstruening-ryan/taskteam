@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import api from "@/lib/api";
-import { AttachmentModalProps } from "@/shared/types";
+import { X, FileUp, Loader2 } from "lucide-react";
+import type { AttachmentModalProps } from "@/shared/types";
 
 export default function AttachmentModal({
   context,
@@ -51,46 +52,52 @@ export default function AttachmentModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-200 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200">
-        <h3 className="text-xl font-black text-slate-800 mb-2">
-          Upload Attachment
-        </h3>
-        <p className="text-sm text-slate-500 mb-6">
-          Adding a file to this {context.type}.
-        </p>
+    <div className="fixed inset-0 z-300 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl animate-in fade-in duration-300">
+      <div className="absolute inset-0" onClick={onClose} />
 
-        <label className="group relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-slate-200 rounded-2xl hover:border-blue-400 hover:bg-blue-50/30 transition-all cursor-pointer">
+      <div className="relative bg-card rounded-[2.5rem] p-10 w-full max-w-lg shadow-[0_32px_64px_-15px_rgba(0,0,0,0.5)] border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h3 className="text-3xl font-black text-foreground tracking-tighter">
+              Transmit File
+            </h3>
+            <div className="flex items-center gap-2.5 mt-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_rgba(79,70,229,0.5)]" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                Uploading to {context.type}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-400 hover:text-foreground">
+            <X size={20} strokeWidth={3} />
+          </button>
+        </div>
+
+        {/* Upload Drop Zone - Glass Readout Style */}
+        <label className="group relative flex flex-col items-center justify-center w-full h-56 bg-accent/3 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl hover:border-accent hover:bg-accent/5 transition-all cursor-pointer shadow-inner">
           {uploading ? (
-            <div className="flex flex-col items-center gap-3">
-              <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              <span className="text-xs font-bold text-blue-600 uppercase">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="w-10 h-10 text-accent animate-spin" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-accent">
                 Uploading...
               </span>
             </div>
           ) : (
             <>
-              <span className="text-3xl mb-2 group-hover:scale-110 transition-transform">
-                📂
-              </span>
-              <span className="text-xs font-black uppercase tracking-widest text-slate-400 group-hover:text-blue-600">
+              <div className="p-4 bg-card rounded-2xl text-accent shadow-sm border border-slate-200 dark:border-slate-800 mb-5">
+                <FileUp size={28} />
+              </div>
+              <span className="text-xs font-black uppercase tracking-widest text-slate-400 group-hover:text-accent">
                 Click to browse files
               </span>
-              <input
-                type="file"
-                className="hidden"
-                onChange={handleFileChange}
-              />
+              <span className="text-[10px] font-medium text-slate-500 mt-2">
+                Maximum upload size: 25MB
+              </span>
+              <input type="file" className="hidden" onChange={handleFileChange} />
             </>
           )}
         </label>
-
-        <button
-          onClick={onClose}
-          className="mt-6 w-full py-3 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
-        >
-          Cancel
-        </button>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import {
   UserPlus,
   MessageSquare,
   Loader2,
+  LucideIcon,
 } from "lucide-react";
 
 export default function NotificationBell() {
@@ -92,25 +93,28 @@ export default function NotificationBell() {
   }, [isOpen]);
 
   const renderContent = (n: NotificationItem) => {
-    const iconMap = {
+    const iconMap: Record<
+      string,
+      { icon: LucideIcon; color: string; label: string }
+    > = {
       access_request: {
         icon: UserPlus,
-        color: "bg-amber-100 text-amber-600",
+        color: "bg-amber-500/10 text-amber-500 border-amber-500/20",
         label: "Access Request",
       },
       request_approved: {
         icon: CheckCircle2,
-        color: "bg-emerald-100 text-emerald-600",
+        color: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
         label: "Approved",
       },
       request_denied: {
         icon: XCircle,
-        color: "bg-red-100 text-red-600",
+        color: "bg-red-500/10 text-red-500 border-red-500/20",
         label: "Denied",
       },
       mention: {
         icon: MessageSquare,
-        color: "bg-blue-100 text-blue-600",
+        color: "bg-accent/10 text-accent border-accent/20",
         label: "New Mention",
       },
     };
@@ -120,14 +124,14 @@ export default function NotificationBell() {
 
     return (
       <div className="flex gap-3">
-        <div className={`mt-1 p-2 rounded-lg h-fit ${config.color}`}>
+        <div className={`mt-1 p-2 rounded-lg h-fit border ${config.color}`}>
           <Icon size={14} />
         </div>
         <div>
-          <p className="text-[11px] font-black uppercase tracking-tight text-slate-800">
+          <p className="text-[11px] font-black uppercase tracking-tight text-foreground">
             {config.label}
           </p>
-          <p className="text-xs text-slate-600 mt-0.5 line-clamp-2">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 leading-relaxed">
             {n.content || "New update pending."}
           </p>
         </div>
@@ -139,27 +143,27 @@ export default function NotificationBell() {
     <div className="relative" ref={bellContainerRef}>
       <button
         onClick={handleToggle}
-        className="p-2 rounded-xl hover:bg-slate-50 transition-all relative group border border-transparent hover:border-slate-100"
+        className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all relative group border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
       >
         <Bell
           size={20}
-          className="text-slate-600 group-hover:text-blue-600 transition-colors"
+          className="text-slate-600 dark:text-slate-400 group-hover:text-accent transition-colors"
         />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[9px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
+          <span className="absolute -top-1 -right-1 bg-accent text-white text-[9px] font-black h-4 w-4 flex items-center justify-center rounded-full border-2 border-card shadow-sm">
             {unreadCount}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-80 bg-white border border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.1)] rounded-3xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
-          <div className="px-6 py-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">
+        <div className="absolute right-0 mt-3 w-85 bg-card border border-slate-200 dark:border-slate-800 shadow-2xl rounded-4xl z-50 overflow-hidden backdrop-blur-xl animate-in fade-in slide-in-from-top-2">
+          <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+            <h3 className="text-[10px] font-black uppercase text-foreground tracking-widest">
               Notifications
             </h3>
           </div>
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto custom-scrollbar">
             {loading ? (
               <div className="p-10 flex justify-center">
                 <Loader2 className="animate-spin text-slate-300" />
@@ -173,10 +177,12 @@ export default function NotificationBell() {
                 <div
                   key={n.id}
                   onClick={() => handleNotificationClick(n)}
-                  className={`px-6 py-5 border-b border-slate-50 hover:bg-slate-50 transition-all cursor-pointer relative ${!n.isRead ? "bg-white" : "opacity-50"}`}
+                  className={`px-6 py-5 border-b border-slate-100 dark:border-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all cursor-pointer relative ${
+                    !n.isRead ? "bg-accent/5" : "opacity-60"
+                  }`}
                 >
                   {!n.isRead && (
-                    <div className="absolute left-2 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 rounded-full" />
+                    <div className="absolute left-2 top-1/2 -translate-y-1/2 w-1 h-8 bg-accent rounded-full shadow-[0_0_10px_rgba(79,70,229,0.5)]" />
                   )}
                   {renderContent(n)}
                 </div>

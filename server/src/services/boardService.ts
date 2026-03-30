@@ -1,15 +1,26 @@
 import { db } from "../db";
-import { boards, boardMembers } from "../db/schema";
-import { eq, and, ilike } from "drizzle-orm";
+import { boards, boardMembers, comments } from "../db/schema";
+import { eq, and, ilike, or } from "drizzle-orm";
 
 export const BoardService = {
-  async getBoardById(boardId: string) {
+  async getBoardById(boardId: string, userId: string) {
     return await db.query.boards.findFirst({
       where: eq(boards.id, boardId),
       with: {
+        meetings: true,
         tasks: {
           with: {
             comments: {
+              where: or(
+                eq(comments.visibility, "public"),
+                and(
+                  eq(comments.visibility, "private"),
+                  or(
+                    eq(comments.userId, userId),
+                    eq(comments.recipientId, userId),
+                  ),
+                ),
+              ),
               with: { user: { columns: { name: true, email: true } } },
             },
             assignedUser: true,
@@ -18,9 +29,7 @@ export const BoardService = {
         },
         members: {
           with: {
-            user: {
-              columns: { id: true, name: true, email: true },
-            },
+            user: { columns: { id: true, name: true, email: true } },
           },
         },
       },
@@ -31,18 +40,11 @@ export const BoardService = {
     return await db.transaction(async (tx) => {
       const [newBoard] = await tx
         .insert(boards)
-        .values({
-          title,
-          userId,
-        })
+        .values({ title, userId })
         .returning();
-
-      await tx.insert(boardMembers).values({
-        boardId: newBoard.id,
-        userId: userId,
-        role: "owner",
-      });
-
+      await tx
+        .insert(boardMembers)
+        .values({ boardId: newBoard.id, userId, role: "owner" });
       return newBoard;
     });
   },
@@ -50,9 +52,7 @@ export const BoardService = {
   async getUserBoards(userId: string) {
     return await db.query.boardMembers.findMany({
       where: eq(boardMembers.userId, userId),
-      with: {
-        board: true,
-      },
+      with: { board: true },
     });
   },
 
@@ -66,10 +66,7 @@ export const BoardService = {
 
   async searchOrganizations(query: string) {
     return await db
-      .select({
-        id: boards.id,
-        title: boards.title,
-      })
+      .select({ id: boards.id, title: boards.title })
       .from(boards)
       .where(ilike(boards.title, `%${query}%`))
       .limit(5);

@@ -3,7 +3,14 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import api from "@/lib/api";
-import { ArrowRight, Sparkles, Layout, Loader2 } from "lucide-react";
+import {
+  ArrowRight,
+  Layout,
+  Loader2,
+  ChevronLeft,
+  Rocket,
+} from "lucide-react";
+import { Zap } from "lucide-react";
 
 export default function CreateWorkspaceWizard() {
   const [step, setStep] = useState(1);
@@ -17,7 +24,7 @@ export default function CreateWorkspaceWizard() {
       const res = await api.post("/boards", { title });
       router.push(`/boards/${res.data.id}`);
     } catch (err) {
-      alert("Error creating workspace. Please try again.");
+      alert("System Error: Failed to initialize workspace.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -25,78 +32,114 @@ export default function CreateWorkspaceWizard() {
   };
 
   return (
-    <div className="max-w-xl mx-auto p-8 pt-20 animate-in fade-in duration-700">
-      <div className="flex justify-center gap-3 mb-12">
-        <div
-          className={`h-2 w-2 rounded-full ${step === 1 ? "bg-blue-600 w-8" : "bg-slate-200"} transition-all`}
-        />
-        <div
-          className={`h-2 w-2 rounded-full ${step === 2 ? "bg-blue-600 w-8" : "bg-slate-200"} transition-all`}
-        />
-      </div>
+    <div className="min-h-[80vh] flex flex-col items-center justify-center relative overflow-hidden px-6">
+      {/* Background Atmosphere */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-indigo-500/5 blur-[120px] pointer-events-none" />
 
-      {step === 1 ? (
-        <div className="space-y-6">
-          <div className="inline-flex p-4 bg-blue-50 text-blue-600 rounded-3xl mb-2">
-            <Layout size={32} />
-          </div>
-          <h1 className="text-4xl font-black text-slate-900 leading-tight">
-            What&aposs the team name?
-          </h1>
-          <p className="text-slate-500 font-medium text-lg">
-            Every great project starts with a name. You can always change this
-            later.
-          </p>
-
-          <input
-            autoFocus
-            className="w-full px-8 py-6 rounded-4xl border-2 border-slate-100 bg-white text-2xl font-bold focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 transition-all outline-none"
-            placeholder="e.g. Marketing Ops"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+      <div className="w-full max-w-xl relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+        {/* Tactical Progress Bar */}
+        <div className="flex justify-center gap-4 mb-16">
+          <div
+            className={`h-1.5 rounded-full transition-all duration-500 ${
+              step === 1
+                ? "bg-indigo-500 w-12 shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                : "bg-slate-800 w-6"
+            }`}
           />
-
-          <button
-            disabled={!title}
-            onClick={() => setStep(2)}
-            className="w-full bg-slate-900 text-white py-6 rounded-4xl font-black text-xl flex items-center justify-center gap-3 hover:bg-blue-600 transition-all disabled:opacity-50"
-          >
-            Next Step <ArrowRight size={24} />
-          </button>
+          <div
+            className={`h-1.5 rounded-full transition-all duration-500 ${
+              step === 2
+                ? "bg-indigo-500 w-12 shadow-[0_0_15px_rgba(99,102,241,0.5)]"
+                : "bg-slate-800 w-6"
+            }`}
+          />
         </div>
-      ) : (
-        <div className="space-y-6">
-          <div className="inline-flex p-4 bg-emerald-50 text-emerald-600 rounded-3xl mb-2">
-            <Sparkles size={32} />
+
+        {step === 1 ? (
+          <div className="space-y-8 text-center sm:text-left">
+            <div className="inline-flex p-5 bg-indigo-600/10 text-indigo-400 rounded-4xl border-2 border-indigo-500/20 shadow-2xl shadow-indigo-500/10 mb-2">
+              <Layout size={32} strokeWidth={2.5} />
+            </div>
+
+            <div className="space-y-3">
+              <h1 className="text-5xl font-black text-white leading-none tracking-tighter antialiased">
+                Name your <br />
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 to-blue-500">
+                  Workspace
+                </span>
+              </h1>
+              <p className="text-slate-500 font-bold text-sm uppercase tracking-[0.2em]">
+                Identity Initialization Required
+              </p>
+            </div>
+
+            <div className="relative group">
+              <input
+                autoFocus
+                className="w-full px-8 py-7 rounded-[2.5rem] border-2 border-slate-800 bg-[#1e293b] text-white text-2xl font-black placeholder:text-slate-700 focus:border-indigo-500/50 focus:ring-8 focus:ring-indigo-500/5 transition-all outline-none shadow-inner"
+                placeholder="e.g. Project Phoenix"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+
+            <button
+              disabled={!title}
+              onClick={() => setStep(2)}
+              className="w-full bg-white text-[#0f172a] py-6 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-10 group shadow-2xl"
+            >
+              Continue{" "}
+              <ArrowRight
+                size={18}
+                className="group-hover:translate-x-1 transition-transform"
+                strokeWidth={3}
+              />
+            </button>
           </div>
-          <h1 className="text-4xl font-black text-slate-900 leading-tight">
-            Ready to launch?
-          </h1>
-          <p className="text-slate-500 font-medium text-lg">
-            We&aposre setting up your workspace for <strong>{title}</strong>.
-            You&aposll be the primary owner.
-          </p>
+        ) : (
+          <div className="space-y-8 text-center sm:text-left">
+            <div className="inline-flex p-5 bg-amber-500/10 text-amber-500 rounded-4xl border-2 border-amber-500/20 shadow-2xl shadow-amber-500/10 mb-2">
+              <Zap size={32} strokeWidth={2.5} />
+            </div>
 
-          <button
-            onClick={handleCreate}
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-6 rounded-4xl font-black text-xl flex items-center justify-center gap-3 shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all"
-          >
-            {loading ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              "Create Workspace"
-            )}
-          </button>
+            <div className="space-y-3">
+              <h1 className="text-5xl font-black text-white leading-none tracking-tighter antialiased">
+                Ready to <br />
+                <span className="text-transparent bg-clip-text bg-linear-to-r from-amber-400 to-orange-500">
+                  Launch?
+                </span>
+              </h1>
+              <p className="text-slate-500 font-bold text-sm uppercase tracking-[0.2em]">
+                Finalizing parameters for{" "}
+                <span className="text-white">{title}</span>
+              </p>
+            </div>
 
-          <button
-            onClick={() => setStep(1)}
-            className="w-full text-slate-400 font-bold hover:text-slate-900 transition-colors"
-          >
-            Actually, let&aposs change the name
-          </button>
-        </div>
-      )}
+            <div className="space-y-4">
+              <button
+                onClick={handleCreate}
+                disabled={loading}
+                className="w-full bg-indigo-500 text-white py-7 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-[0_20px_50px_rgba(99,102,241,0.3)] hover:bg-indigo-400 transition-all active:scale-95"
+              >
+                {loading ? (
+                  <Loader2 className="animate-spin" size={20} strokeWidth={3} />
+                ) : (
+                  <>
+                    Begin Mission <Rocket size={18} strokeWidth={3} />
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={() => setStep(1)}
+                className="w-full flex items-center justify-center gap-2 text-slate-500 font-black text-[10px] uppercase tracking-[0.2em] hover:text-white transition-colors py-2"
+              >
+                <ChevronLeft size={14} /> Re-configure Name
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
