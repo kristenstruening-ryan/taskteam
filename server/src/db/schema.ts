@@ -146,6 +146,9 @@ export const notifications = pgTable("notifications", {
   content: text("content"),
   type: text("type").notNull(),
   isRead: boolean("is_read").default(false).notNull(),
+  inviteId: uuid("invite_id").references(() => boardInvites.id, {
+    onDelete: "cascade",
+  }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -172,11 +175,12 @@ export const boardInvites = pgTable("board_invites", {
     .references(() => boards.id, { onDelete: "cascade" })
     .notNull(),
   email: text("email").notNull(),
-  token: text("token").notNull().unique(),
+  token: uuid("token").defaultRandom().notNull().unique(),
   role: text("role").default("member").notNull(),
   inviterId: uuid("inviter_id")
     .references(() => users.id)
     .notNull(),
+  status: text("status").default("pending").notNull(), // 'pending', 'accepted', 'expired', 'revoked'
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -224,7 +228,19 @@ export const boardsRelations = relations(boards, ({ many, one }) => ({
   members: many(boardMembers),
   attachments: many(attachments),
   meetings: many(meetings),
+  invites: many(boardInvites),
   owner: one(users, { fields: [boards.userId], references: [users.id] }),
+}));
+
+export const boardInvitesRelations = relations(boardInvites, ({ one }) => ({
+  board: one(boards, {
+    fields: [boardInvites.boardId],
+    references: [boards.id],
+  }),
+  inviter: one(users, {
+    fields: [boardInvites.inviterId],
+    references: [users.id],
+  }),
 }));
 
 export const phasesRelations = relations(phases, ({ one, many }) => ({

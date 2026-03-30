@@ -159,59 +159,63 @@ export default function ProjectHub() {
   }, [isBoardChatOpen]);
 
   const onDragEnd = async (result: DropResult) => {
-  const { destination, source, draggableId } = result;
+    const { destination, source, draggableId } = result;
 
-  if (!destination || !board || !currentUser) return;
-  if (
-    destination.droppableId === source.droppableId &&
-    destination.index === source.index
-  ) return;
+    if (!destination || !board || !currentUser) return;
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    )
+      return;
 
-  const originalTasks = [...board.tasks];
-  const updatedTasks = Array.from(board.tasks);
-  const taskIdx = updatedTasks.findIndex((t) => t.id === draggableId);
+    const originalTasks = [...board.tasks];
+    const updatedTasks = Array.from(board.tasks);
+    const taskIdx = updatedTasks.findIndex((t) => t.id === draggableId);
 
-  if (taskIdx === -1) {
-    console.error("Task missing from local state");
-    return;
-  }
-
-  const [movedTask] = updatedTasks.splice(taskIdx, 1);
-  movedTask.columnId = destination.droppableId;
-  updatedTasks.splice(destination.index, 0, movedTask);
-
-  setBoard({ ...board, tasks: updatedTasks });
-
-  try {
-    await api.post(`/tasks/move`, {
-      taskId: draggableId,
-      newColumnId: destination.droppableId,
-      newOrder: destination.index,
-    });
-
-    if (destination.droppableId === "done" && source.droppableId !== "done") {
-      fire(2);
-      setToast({ message: "Objective Secured. Great work!", type: "success" });
+    if (taskIdx === -1) {
+      console.error("Task missing from local state");
+      return;
     }
 
-    fetchMetrics();
-    if (socketRef.current) {
-      const payload: TaskUpdatePayload = {
-        boardId: id as string,
+    const [movedTask] = updatedTasks.splice(taskIdx, 1);
+    movedTask.columnId = destination.droppableId;
+    updatedTasks.splice(destination.index, 0, movedTask);
+
+    setBoard({ ...board, tasks: updatedTasks });
+
+    try {
+      await api.post(`/tasks/move`, {
         taskId: draggableId,
-        columnId: destination.droppableId,
-      };
-      socketRef.current.emit("task-moved", payload);
+        newColumnId: destination.droppableId,
+        newOrder: destination.index,
+      });
+
+      if (destination.droppableId === "done" && source.droppableId !== "done") {
+        fire(2);
+        setToast({
+          message: "Objective Secured. Great work!",
+          type: "success",
+        });
+      }
+
+      fetchMetrics();
+      if (socketRef.current) {
+        const payload: TaskUpdatePayload = {
+          boardId: id as string,
+          taskId: draggableId,
+          columnId: destination.droppableId,
+        };
+        socketRef.current.emit("task-moved", payload);
+      }
+    } catch (err) {
+      console.error("Sync Failure:", err);
+      setBoard((prev) => (prev ? { ...prev, tasks: originalTasks } : null));
+      setToast({
+        message: "Security Protocol: Position sync failed. Reverting...",
+        type: "error",
+      });
     }
-  } catch (err) {
-    console.error("Sync Failure:", err);
-    setBoard((prev) => (prev ? { ...prev, tasks: originalTasks } : null));
-    setToast({
-      message: "Security Protocol: Position sync failed. Reverting...",
-      type: "error",
-    });
-  }
-};
+  };
 
   const handleCreateTask = async (columnId: string, content: string) => {
     if (!content?.trim()) return;
@@ -317,7 +321,7 @@ export default function ProjectHub() {
     <div className="min-h-screen bg-[#0f172a] text-slate-200 relative overflow-x-hidden selection:bg-indigo-500/30">
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-250 h-150 bg-indigo-500/5 blur-[150px] pointer-events-none z-0" />
 
-      <div className="relative z-10 p-4 lg:p-10 max-w-450 mx-auto space-y-12 animate-in fade-in duration-700">
+      <div className="relative z-10 p-4 lg:p-10 max-w-400 mx-auto space-y-12 animate-in fade-in duration-700">
         {toast && (
           <Toast
             message={toast.message}
@@ -325,7 +329,6 @@ export default function ProjectHub() {
             onClose={() => setToast(null)}
           />
         )}
-
         <ProjectHeader
           title={board.title}
           boardId={board.id}
@@ -339,13 +342,14 @@ export default function ProjectHub() {
           }}
           hasNewMessages={hasNewMessages}
         />
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <ProjectNewsContainer
-            boardId={id as string}
-            newsKey={newsKey}
-            velocity={metrics?.globalVelocity || 0}
-          />
+          <div className="lg:col-span-2">
+            <ProjectNewsContainer
+              boardId={id as string}
+              newsKey={newsKey}
+              velocity={metrics?.globalVelocity || 0}
+            />
+          </div>
 
           <VelocityCard
             velocity={metrics?.globalVelocity || 0}
@@ -354,7 +358,6 @@ export default function ProjectHub() {
           />
         </div>
         {/* ------------------------------ */}
-
         <div className="pt-4">
           <div className="flex items-center gap-3 mb-8 px-2">
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />

@@ -180,9 +180,12 @@ export default function KanbanBoard({
       </div>
 
       <DragDropContext onDragEnd={onDragEnd}>
+        {/* Horizontal scroll container for columns */}
         <div className="flex gap-8 overflow-x-auto pb-12 px-4 custom-scrollbar min-h-150 items-start">
           {COLUMNS.map((colId) => {
             const theme = COLUMN_THEMES[colId];
+
+            // Apply filtering logic
             const processedTasks = tasks
               .filter((t) => t.columnId === colId)
               .filter((t) =>
@@ -191,7 +194,14 @@ export default function KanbanBoard({
               .filter((t) => {
                 if (!filterUser) return true;
                 if (filterUser === "unassigned") return !t.assignedUser;
-                return t.assignedUser === filterUser;
+
+                // Handle both object-based and string-based assignedUser references
+                const assignedId =
+                  typeof t.assignedUser === "string"
+                    ? t.assignedUser
+                    : t.assignedUser?.id;
+
+                return assignedId === filterUser;
               });
 
             return (
